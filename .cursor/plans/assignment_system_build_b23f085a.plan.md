@@ -1,269 +1,424 @@
 ---
 name: Assignment System Build
-overview: "Phase-by-phase plan to build a full-stack Assignment and Submission Management System (Admin / Teacher / Student) with ASP.NET Core Web API, Next.js, PostgreSQL, JWT auth, and unit tests matching the OnnoRokom recruitment brief."
+overview: "Blow-their-minds submission for OnnoRokom: latest-stable ASP.NET Core 10 + Next.js 16 + PostgreSQL, strict Clean Architecture, every PDF must-have covered, plus Docker one-shot setup, filtering, in-app notifications, and CI — evaluator-ready by 14 Aug 2026."
 todos:
   - id: phase-0-scaffold
-    content: "Phase 0: Scaffold backend solution, Next.js frontend, README/.env.example"
+    content: "Phase 0: Latest-stable Clean Architecture scaffold, contracts, README/.env.example"
     status: pending
   - id: phase-1-domain-db
-    content: "Phase 1: Domain entities, EF Core, migrations, seed demo data"
+    content: "Phase 1: Domain + EF migrations + seed + SQL dump for evaluators"
     status: pending
   - id: phase-2-auth
-    content: "Phase 2: JWT login, role policies, frontend auth guards"
+    content: "Phase 2: JWT login, RBAC policies (API-enforced), frontend guards"
     status: pending
   - id: phase-3-admin
-    content: "Phase 3: Admin APIs + UI (users, classes, subjects, enrollments)"
+    content: "Phase 3: Full Admin role surface (users, classes, subjects, assign teachers, settings, overview)"
     status: pending
   - id: phase-4-teacher-assignments
-    content: "Phase 4: Teacher assignment CRUD, draft/publish rules"
+    content: "Phase 4: Teacher assignment CRUD + draft/publish + class/subject scope"
     status: pending
   - id: phase-5-student-submissions
-    content: "Phase 5: Student view/submit/update with deadline rules"
+    content: "Phase 5: Student view/submit/update + deadline + status/marks/feedback"
     status: pending
   - id: phase-6-grading
-    content: "Phase 6: Teacher grading, marks validation, feedback"
+    content: "Phase 6: Teacher review, marks, feedback, submission status changes"
     status: pending
-  - id: phase-7-quality
-    content: "Phase 7: Validation, errors, logging, Swagger, responsive UI"
+  - id: phase-7-quality-wow
+    content: "Phase 7: Brief quality bar + wow (pagination, filters, notifications, Docker, polish UI)"
     status: pending
   - id: phase-8-tests
-    content: "Phase 8: xUnit tests for authz and submission business rules"
+    content: "Phase 8: xUnit for business rules, authorization, submission workflows + CI"
     status: pending
   - id: phase-9-docs-submit
-    content: "Phase 9: README polish, demo credentials, submission checklist"
+    content: "Phase 9: README per PDF §4, demo creds, §5 checklist, submit q-rp.com"
     status: pending
 isProject: false
 ---
 
-# Assignment and Submission Management System — Phase Plan
+# Assignment & Submission Management System — Phase Plan
 
-Build a role-based school/college app per the recruitment PDF. **Stack defaults:** ASP.NET Core 8+ Web API + Next.js (App Router) + TypeScript + **PostgreSQL + EF Core** (relational domain fits classes/subjects/assignments/submissions) + JWT + xUnit. Monorepo: `backend/` + `frontend/`.
+**Brief:** OnnoRokom Assistant Software Engineer Recruitment Project  
+**Deadline:** 14 August 2026 · **Submit:** https://q-rp.com/c/4CIs  
+**Bar:** Not “works.” Evaluator opens repo, runs Docker or README steps, logs in as all three roles, feels production software from a senior hire.
+
+Monorepo: `backend/` + `frontend/` + root README / `.env.example` / `docker-compose.yml`.
 
 ```mermaid
-flowchart LR
-  subgraph clients [Frontend]
-    Next[Next.js App]
+flowchart TB
+  subgraph clients [Frontend Next.js 16]
+    Next[App Router + role layouts]
   end
-  subgraph api [Backend]
-    Auth[JWT Auth]
-    Controllers[REST Controllers]
-    Services[Business Services]
+  subgraph api [Api Host]
+    Controllers[Thin controllers]
+    Middleware[JWT Errors Serilog CORS]
   end
-  subgraph data [Data]
-    PG[(PostgreSQL)]
+  subgraph application [Application]
+    Services[Use-case services]
+    DTOs[DTOs + FluentValidation]
+    Ports[Ports / interfaces]
   end
-  Next -->|Bearer JWT| Auth
-  Auth --> Controllers
+  subgraph domain [Domain]
+    Entities[Entities Enums Rules]
+  end
+  subgraph infra [Infrastructure]
+    EF[EF Core + Npgsql]
+    JWT[JWT + password hashing]
+    Repos[Repository implementations]
+  end
+  subgraph data [PostgreSQL]
+    PG[(Migrations + seed)]
+  end
+  Next -->|Bearer JWT| Middleware
+  Middleware --> Controllers
   Controllers --> Services
-  Services --> PG
+  Services --> Ports
+  Services --> Entities
+  Repos -.->|implements| Ports
+  EF --> PG
+  api --> application
+  api --> infra
+  infra --> application
+  application --> domain
 ```
 
 ---
 
-## Phase 0 — Project scaffolding and contracts
+## Brief requirements matrix (PDF → must ship)
 
-**Goal:** Runnable empty shells, shared conventions, documented assumptions.
+Every bullet from the PDF is a hard requirement. Nothing below is optional.
 
-- Create solution: `backend/AssignmentSystem.sln` with projects:
-  - `AssignmentSystem.Api` — Web API host
-  - `AssignmentSystem.Domain` — entities, enums
-  - `AssignmentSystem.Application` — DTOs, interfaces, validators, services
-  - `AssignmentSystem.Infrastructure` — EF Core, Identity/JWT, repos
-  - `AssignmentSystem.Tests` — xUnit
-- Scaffold `frontend/` with Next.js + TypeScript + Tailwind; API client stub (`fetch`/axios) pointing at `NEXT_PUBLIC_API_URL`
-- Add root `README.md` skeleton, `.env.example` (API + DB + JWT secret), `.gitignore`
-- Document assumptions early (e.g. one student per class; submissions editable until deadline; draft assignments hidden from students)
+### §2 Admin
 
-**Exit:** `dotnet build` and `npm run dev` both start; Swagger loads with no real endpoints yet.
-
----
-
-## Phase 1 — Domain model and database
-
-**Goal:** Schema + migrations + seed data evaluators can apply without manual DDL.
-
-**Core entities and relationships:**
-
-| Entity | Key fields / notes |
+| Requirement | Where |
 | --- | --- |
-| `User` | Email, password hash, role (Admin, Teacher, or Student), name |
-| `Class` / `Course` | Name, code, academic year |
-| `Subject` | Name, code; linked to class |
-| `TeacherAssignment` | Teacher linked to Subject and Class |
-| `StudentEnrollment` | Student linked to Class |
-| `Assignment` | Title, description, deadline, max marks, status (Draft or Published), ClassId, SubjectId, CreatedByTeacherId |
-| `Submission` | AssignmentId, StudentId, answer text, submittedAt, status (Submitted, Late, Graded, or Returned), marks, feedback |
+| Manage users | Phase 3 — create/update/deactivate, assign role |
+| Manage classes/courses and subjects | Phase 3 — CRUD |
+| Assign teachers to subjects/classes | Phase 3 — `TeacherAssignment` |
+| View all assignments and submissions | Phase 3 — read-only lists + detail |
+| Manage application-level settings | Phase 3 — e.g. `AllowLateSubmissions`, display name |
 
-```mermaid
-erDiagram
-  User ||--o{ StudentEnrollment : enrolls
-  Class ||--o{ StudentEnrollment : has
-  Class ||--o{ Subject : contains
-  User ||--o{ TeacherAssignment : teaches
-  Subject ||--o{ TeacherAssignment : assigned
-  Class ||--o{ TeacherAssignment : scoped
-  User ||--o{ Assignment : creates
-  Class ||--o{ Assignment : receives
-  Subject ||--o{ Assignment : for
-  Assignment ||--o{ Submission : receives
-  User ||--o{ Submission : submits
-```
+### §2 Teacher
 
-- EF Core `DbContext`, Fluent configs, indexes (unique email; unique submission per student+assignment)
-- Initial migration + seed: 1 Admin, 1-2 Teachers, 2-3 Students, sample classes/subjects/assignments
-- Demo credentials fixed in README (e.g. `admin@demo.local` / `Teacher@123!` pattern — not real secrets)
+| Requirement | Where |
+| --- | --- |
+| Create, update, delete assignments | Phase 4 |
+| Assign to specific class/course and subject | Phase 4 — ClassId + SubjectId; only if teacher assigned |
+| Title, description, deadline, max marks | Phase 4 |
+| Publish or keep as draft | Phase 4 — Draft invisible to students |
+| View student submissions | Phase 6 |
+| Assign marks and provide feedback | Phase 6 |
+| Change submission status when necessary | Phase 6 — e.g. Submitted → Graded / Returned |
 
-**Exit:** `dotnet ef database update` creates DB; seed users exist.
+### §2 Student
 
----
+| Requirement | Where |
+| --- | --- |
+| View assignments for their class/course | Phase 5 — enrolled + Published only |
+| View assignment details and deadline | Phase 5 |
+| Submit an answer | Phase 5 |
+| Update submission before deadline if allowed | Phase 5 — allowed until deadline unless graded/locked |
+| View status, marks, teacher feedback | Phase 5 / 6 |
 
-## Phase 2 — Auth and authorization
+### §3 Technical
 
-**Goal:** Login + JWT + role enforcement on every protected route.
+| Requirement | Approach |
+| --- | --- |
+| Next.js, React, TypeScript, responsive UI, form validation, API integration | Next.js **latest stable** App Router, Tailwind, Zod + RHF, typed API client |
+| ASP.NET Core Web API, C#, REST, validation, error handling, logging, Swagger/OpenAPI | ASP.NET Core **latest stable** (`.NET 10`), FluentValidation, exception middleware, Serilog, OpenAPI JWT |
+| PostgreSQL or MongoDB + relationships | **PostgreSQL + EF Core** (relational domain fits); migrations + seed so no manual DDL |
+| Login, JWT, role-based authorization | Phase 2 — **enforced on API** (checklist §5) |
+| Unit tests: business rules, authorization, submission workflows | Phase 8 — xUnit on Application services |
 
-- `POST /api/auth/login` → access token (claims: `sub`, `email`, `role`)
-- Optional `GET /api/auth/me` for current user
-- ASP.NET policies: `[Authorize(Roles = "Admin")]` etc.; global 401/403 handling
-- Frontend: login page, store token in localStorage (document in README), auth guard / middleware by role, redirect to role dashboards
+### §4 Submission pack
 
-**Exit:** Each role can log in; unauthorized API calls return 403.
+| Deliverable | Plan |
+| --- | --- |
+| GitHub/GitLab repo link | Public or shared access before submit |
+| Frontend + backend + DB files + unit tests | Monorepo complete |
+| Migrations, seed/sample data, DB script/backup | EF migrations + seed **and** `docs/db/seed-backup.sql` (or pg_dump) |
+| README: overview, features, stack, structure, setup, DB setup, run FE/BE, run tests, assumptions, limitations | Phase 9 template matches PDF verbatim |
+| Demo credentials Admin / Teacher / Student | Seeded + README table |
+| `.env.example` — no real secrets | Root + documented |
+| Easy local setup | README + **Docker Compose one-command** (wow, still must feel easy) |
 
----
+### §5 Final checklist (gate before submit)
 
-## Phase 3 — Admin APIs and UI
+- [ ] Repo accessible  
+- [ ] Frontend and backend included  
+- [ ] DB creatable from provided files/instructions  
+- [ ] Demo accounts for all three roles  
+- [ ] README explains run project + tests  
+- [ ] **Role-based access enforced by backend API**  
+- [ ] Important business rules implemented **and tested**  
+- [ ] No real secrets committed  
 
-**Goal:** Admin can manage users, classes/subjects, and teacher assignments.
+### §6 Submit
 
-**APIs (CRUD as needed):**
-
-- Users: list/create/update/deactivate; assign role
-- Classes and subjects: CRUD
-- Assign teachers to subject/class; enroll students in class
-- Read-only: all assignments and submissions (list + detail)
-- Simple app settings (e.g. allow late submissions flag)
-
-**UI:** Admin layout — users, classes, subjects, enrollments/assignments overview tables with forms and validation.
-
-**Exit:** Admin can set up a full school structure end-to-end via UI.
-
----
-
-## Phase 4 — Teacher assignment lifecycle
-
-**Goal:** Teachers create and manage assignments for their classes/subjects.
-
-**Business rules (test these):**
-
-- Teacher may only create/edit assignments for classes/subjects they are assigned to (Admin can view all)
-- Draft invisible to students; Published visible to enrolled students
-- Fields: title, description, deadline, max marks; publish/unpublish (or draft to published)
-- Update/delete with sensible constraints (e.g. block delete if graded submissions exist — document if chosen)
-
-**APIs:** `POST/PUT/DELETE/GET /api/assignments`, `POST .../publish`
-**UI:** Teacher dashboard — my assignments, create/edit form, draft vs published badge, submission count.
-
-**Exit:** Teacher publishes an assignment; students in that class can see it via API.
+Ship via https://q-rp.com/c/4CIs · issues → hrd@onnorokom.com
 
 ---
 
-## Phase 5 — Student submissions
+## Version policy (non-negotiable)
 
-**Goal:** Students view assignments and submit/update answers before deadline.
+**Always latest stable.** No EOL SDKs, no preview/RC for production path.
 
-**Business rules:**
+| Concern | Policy (as of Aug 2026 — re-check at scaffold) |
+| --- | --- |
+| .NET / ASP.NET Core | **.NET 10 / ASP.NET Core 10** (`net10.0`) LTS |
+| EF Core / Npgsql | Same major as TFM |
+| Node.js | Latest Active LTS |
+| Next.js / React | `create-next-app@latest` — **Next.js 16.x**, App Router only |
+| TS, Tailwind, Zod, RHF, ESLint | `@latest` at install |
+| FluentValidation, Serilog, xUnit | Latest stable NuGet for TFM |
+| PostgreSQL | Latest stable in Docker image tag |
 
-- Only enrolled students see published assignments for their class
-- One submission per student per assignment
-- Create submission; update allowed before deadline (and only if not locked/graded — document rule)
-- After deadline: reject new/updates (default); mark Late only if Admin setting allows late
-- Student can see status, marks, feedback when graded
+Install via `dotnet-install.sh --channel 10.0` (avoid broken distro `dotnet-sdk-5.0` paths). Patch-bump everything before Phase 9.
 
-**APIs:** `GET /api/assignments` (student-scoped), `POST/PUT /api/submissions`, `GET /api/submissions/mine`
-**UI:** Student assignment list, detail + deadline, submit/edit form, status/marks/feedback view.
-
-**Exit:** Happy path: publish → submit → student sees Submitted.
-
----
-
-## Phase 6 — Grading and feedback
-
-**Goal:** Teachers review submissions and grade them.
-
-**Business rules:**
-
-- Teacher sees submissions only for their assignments
-- Marks must be `0..MaxMarks`
-- Setting marks + feedback sets status to Graded
-- Teacher can change status when necessary (e.g. Submitted to Graded)
-
-**APIs:** `GET /api/assignments/{id}/submissions`, `PUT /api/submissions/{id}/grade`
-**UI:** Submission list per assignment, grade form, feedback textarea.
-
-**Exit:** Student sees marks and feedback after teacher grades.
+**Forbidden:** business logic in controllers, EF entities as API contracts, Pages Router, secrets in git, Mongo without justification (we chose Postgres).
 
 ---
 
-## Phase 7 — Cross-cutting quality
+## Clean Architecture & production standards (non-negotiable)
 
-**Goal:** Production-shaped API behavior and UX polish required by the brief.
+Dependencies point **inward** only.
 
-- FluentValidation (or DataAnnotations) on all write DTOs
-- Consistent error envelope (`message`, `errors[]`, status codes)
-- Serilog/ILogger + request logging
-- Swagger with JWT bearer scheme documented
-- Frontend: responsive layouts, form validation (Zod/React Hook Form), loading/error states
-- Pagination on list endpoints with basic `page` / `pageSize`
-
-**Exit:** Invalid payloads return 400; Swagger usable for full manual smoke test.
-
----
-
-## Phase 8 — Automated tests
-
-**Goal:** Unit tests for important business rules, authz, and submission workflows (brief requirement).
-
-Focus areas in `AssignmentSystem.Tests`:
-
-1. **Authorization:** student cannot grade; teacher cannot manage users; teacher cannot edit another teacher's class assignment
-2. **Assignment:** draft not returned to student queries; publish transitions
-3. **Submission:** update before deadline OK; after deadline fails; duplicate submission fails; marks greater than maxMarks fails
-4. **Enrollment:** student only sees own class assignments
-
-Prefer testing Application services with in-memory/SQLite EF or mocked repos — fast, no Docker required for CI.
-
-**Exit:** `dotnet test` green; README documents the command.
-
----
-
-## Phase 9 — Docs, seed polish and submission pack
-
-**Goal:** Evaluator can clone → configure → run in under ~15 minutes.
-
-- Complete README: overview, features, stack, structure, setup (Postgres, migrate, seed, run API, run Next, run tests), assumptions, limitations, demo credentials table
-- `.env.example` for backend + frontend; no real secrets committed
-- Confirm checklist from PDF section 5 (repo access, both apps, DB files, demo accounts, RBAC on API, tests, no secrets)
-- Optional stretch (only if time): Docker Compose (`api` + `web` + `postgres`), live deploy URL
-
-**Exit:** Fresh machine path documented; ready for https://q-rp.com/c/4CIs
-
----
-
-## Suggested build order (calendar)
-
-| Phase | Focus | Rough order |
+| Project | Responsibility | May reference |
 | --- | --- | --- |
-| 0-1 | Scaffold + DB | First |
-| 2 | Auth | Blocks all UI |
-| 3 | Admin | Unlocks realistic data |
-| 4-5 | Assignments + submissions | Core product |
-| 6 | Grading | Completes workflows |
-| 7-8 | Quality + tests | Parallelize late |
-| 9 | README + submit | Last |
+| `AssignmentSystem.Domain` | Entities, enums, domain exceptions, pure rules. No EF/HTTP/JWT. | BCL only |
+| `AssignmentSystem.Application` | Use-case services, DTOs, ports, FluentValidation, mapping. No DbContext, no Controllers. | Domain |
+| `AssignmentSystem.Infrastructure` | EF Core, repos, JWT, password hashing. Implements ports. | Application, Domain |
+| `AssignmentSystem.Api` | Composition root: DI, middleware, thin Controllers, OpenAPI. | Application, Infrastructure |
+| `AssignmentSystem.Tests` | Business rules, authz, submission workflows. | Application, Domain (+ test DB doubles) |
 
-Deadline in brief: **14 August 2026** — treat Phases 0-6 as must-ship; 7-8 as required for checklist; Docker/live URL as optional.
+**Rules every phase:** thin controllers · logic in Application/Domain · DTO boundaries · constructor DI · async + `CancellationToken` · FluentValidation · global errors · JWT + resource authz · Serilog (never log secrets) · `IOptions` + env · Fluent configs + migrations · frontend guards with server as source of truth · paginated lists · REST under `/api/...`.
+
+**Default:** plain Application services (not MediatR) — clean, not ceremonial.
 
 ---
 
-## Out of scope (unless time remains)
+## Documented assumptions (README from day one)
 
-File uploads for answers, email/push notifications, real-time chat, multi-tenant schools, OAuth social login, advanced analytics.
+Write these early; refine if needed:
+
+1. One active enrollment model: students enroll in a **Class**; they see Published assignments for enrolled classes only.  
+2. Teachers act only on Class+Subject pairs via `TeacherAssignment` (Admin unrestricted for view).  
+3. Draft assignments are **hidden from students**; Published are visible.  
+4. One submission per student per assignment (unique constraint).  
+5. Students may **update** submissions until deadline **unless** status is Graded (then locked).  
+6. After deadline: reject create/update by default; if Admin `AllowLateSubmissions` is true, accept and mark **Late**.  
+7. Marks must be `0..MaxMarks`; grading sets status to **Graded**.  
+8. JWT stored in `localStorage` for SPA simplicity (tradeoff documented).  
+9. Answers are **text** (no file upload — out of brief scope).  
+10. Delete assignment blocked if any **Graded** submission exists.
+
+---
+
+## Wow tier (PDF §4 optional → we treat as planned excellence)
+
+PDF lists these as optional. We ship them to stand out — **after** must-haves work, but scheduled so they are not last-minute:
+
+| Wow item | Why evaluators notice |
+| --- | --- |
+| **Docker Compose** (`api` + `web` + `postgres`) | Clone → `docker compose up` → demo |
+| **Pagination + advanced filtering** | Lists: search, role/status/class, deadline range, sort |
+| **In-app notifications** | Persisted: “assignment published”, “submission graded” — no email required |
+| **Role dashboards with signal** | Teacher: pending to grade / due soon; Student: due soon / returned feedback; Admin: counts |
+| **Distinctive responsive UI** | Cohesive design system (CSS variables), not generic purple admin chrome; mobile usable |
+| **OpenAPI polish** | JWT try-it-out, tagged endpoints, example payloads |
+| **CI** | GitHub Actions: `dotnet test` + frontend typecheck/lint on push |
+| **DB backup file** | Migrations + seed **and** SQL dump under `docs/db/` |
+| **Health + correlation** | `GET /health`; request id in logs/error envelope |
+| **Live URL** | Stretch if time; document Swagger URL either way |
+
+**Still out of scope (don’t burn deadline):** file uploads, email/push, realtime chat, multi-tenant, OAuth social, heavy analytics, CQRS theatre.
+
+---
+
+## Phase 0 — Scaffold and contracts
+
+**Goal:** Latest-stable empty shells, Clean Architecture wired, assumptions + env templates.
+
+- Install .NET 10 SDK; Node Active LTS.  
+- Solution `backend/AssignmentSystem.sln` → Api / Domain / Application / Infrastructure / Tests (`net10.0`).  
+- Folders: Domain `Entities|Enums|Exceptions`; Application `Interfaces|DTOs|Services|Validators` + `AddApplication()`; Infrastructure `AddInfrastructure()`; Api wires both + Swagger.  
+- Frontend: `create-next-app@latest` (TS, Tailwind, App Router); `src/lib/api.ts` → `NEXT_PUBLIC_API_URL`.  
+- Root README skeleton (PDF §4 headings), `.env.example`, `.gitignore`, assumptions section.  
+- Optional early: empty `docker-compose.yml` stub.
+
+**Exit:** `dotnet build`, `npm run dev`, Swagger loads; zero feature endpoints; layer refs correct.
+
+---
+
+## Phase 1 — Domain + database (PDF: relationships + DB files)
+
+**Goal:** Schema evaluators apply with **zero manual DDL**.
+
+| Entity | Notes |
+| --- | --- |
+| `User` | Email (unique), password hash, role, name, IsActive, audit timestamps |
+| `Class` | Name, code, academic year |
+| `Subject` | Name, code, ClassId |
+| `TeacherAssignment` | TeacherId + SubjectId + ClassId (unique combo) |
+| `StudentEnrollment` | StudentId + ClassId (unique) |
+| `Assignment` | Title, description, deadline, max marks, Draft/Published, ClassId, SubjectId, CreatedByTeacherId |
+| `Submission` | AssignmentId, StudentId, answer, submittedAt, status, marks, feedback |
+| `AppSetting` | Key/value (or typed row) for admin settings |
+| `Notification` | UserId, type, title, body, isRead, createdAt (wow) |
+
+- Domain entities; Infrastructure Fluent configs + indexes; Application ports.  
+- Migration + seed: 1 Admin, ≥1 Teacher, ≥2 Students, class/subjects, sample draft+published assignment, one sample submission.  
+- Export `docs/db/seed-backup.sql` after seed.  
+- Demo passwords only in README / seed (not production secrets).
+
+**Exit:** `dotnet ef database update` (or Compose) creates DB; seed users exist; Domain has zero EF refs.
+
+---
+
+## Phase 2 — Auth (PDF: Login + JWT + RBAC on API)
+
+**Goal:** Login works; **every protected route rejects wrong role at API**.
+
+- `POST /api/auth/login` → JWT (`sub`, `email`, `role`); `GET /api/auth/me`.  
+- Policies per role; 401/403 middleware.  
+- Frontend login + role redirect (`/admin`, `/teacher`, `/student`); unauthorized UI routes bounce.  
+- Prove checklist: Student token calling Admin/Teacher endpoints → **403**.
+
+**Exit:** All three demo accounts log in; RBAC enforced server-side.
+
+---
+
+## Phase 3 — Admin (full §2 Admin)
+
+**Goal:** Admin can configure the whole school from UI.
+
+**APIs → Application services:** users CRUD/deactivate/role; classes & subjects CRUD; assign teachers; enroll students; settings; read-only assignments & submissions (paginated + filters).
+
+**UI:** Admin shell — Users, Classes, Subjects, Teacher assignments, Enrollments, Assignments overview, Submissions overview, Settings. Forms validated (Zod).
+
+**Exit:** Fresh Admin can create teacher/student, class, subject, assign teacher, enroll student — no SQL.
+
+---
+
+## Phase 4 — Teacher assignments (full §2 Teacher create path)
+
+**Goal:** Teacher CRUD + draft/publish scoped to their Class/Subject.
+
+- Rules: only assigned Class+Subject; Admin can view all; draft hidden from students; delete blocked if graded submissions.  
+- APIs: assignments CRUD + `POST .../publish` (+ unpublish if useful).  
+- UI: my assignments, create/edit, draft/published badge, submission count.
+
+**Exit:** Publish → enrolled students see via API; draft does not appear for students.
+
+---
+
+## Phase 5 — Student submissions (full §2 Student)
+
+**Goal:** View → submit → update before deadline → see status.
+
+- Rules: enrolled + Published only; one submission; update until deadline unless Graded; late policy via settings.  
+- APIs: student-scoped assignments; `POST/PUT /api/submissions`; `GET .../mine`.  
+- UI: list with deadline urgency, detail, submit/edit, status/marks/feedback panel.
+
+**Exit:** publish → submit → Submitted visible to student and teacher.
+
+---
+
+## Phase 6 — Grading (full §2 Teacher review path)
+
+**Goal:** Review, marks, feedback, status changes.
+
+- Rules: only own assignments’ submissions; marks `0..MaxMarks`; grade → Graded; allow Returned/status change when needed.  
+- APIs: `GET /api/assignments/{id}/submissions`, `PUT /api/submissions/{id}/grade` (and status).  
+- UI: submission table, grade form, feedback.  
+- Side effect: create Notification for student (wow).
+
+**Exit:** Student sees marks + feedback; notification appears.
+
+---
+
+## Phase 7 — Quality bar + wow (PDF §3 quality + §4 optionals)
+
+**Goal:** Brief’s validation / errors / logging / Swagger **and** excellence features.
+
+**Must (brief):**
+
+- FluentValidation all writes; error envelope; Serilog + request logging; OpenAPI + JWT scheme; responsive UI; CORS locked to frontend origin.
+
+**Wow (ship):**
+
+- Pagination + filters/sort on major lists  
+- Notifications API + bell UI  
+- Role dashboard stats  
+- `GET /health`  
+- Docker Compose: postgres + api (migrate/seed on start) + web  
+- Distinctive UI system (variables, hierarchy, motion reserved, mobile)  
+- GitHub Actions: test + lint  
+
+**Exit:** Invalid body → 400; full smoke via Swagger; `docker compose up` reaches login.
+
+---
+
+## Phase 8 — Tests (PDF §3 + §5)
+
+**Goal:** Important business rules, authorization, submission workflows — green CI.
+
+Minimum cases:
+
+1. **Authz:** student cannot grade / manage users; teacher cannot manage users; teacher cannot edit another teacher’s class assignment.  
+2. **Assignment:** draft excluded from student queries; publish transition.  
+3. **Submission:** update before deadline OK; after deadline fails (default); duplicate fails; marks > maxMarks fails.  
+4. **Enrollment:** student only sees own class assignments.  
+5. **Settings:** late allowed path marks Late (if implemented).
+
+Prefer Application-layer tests (mocks or EF InMemory/SQLite). README documents `dotnet test`.
+
+**Exit:** `dotnet test` green locally and in CI.
+
+---
+
+## Phase 9 — Docs + submission pack (PDF §4–§6)
+
+**Goal:** Evaluator success in &lt;15 minutes; checklist §5 all green.
+
+README **must** include (PDF wording):
+
+1. Short project overview  
+2. Main features  
+3. Technology stack (exact versions)  
+4. Project structure (Clean Architecture)  
+5. Setup instructions  
+6. Database setup (migrate + seed + optional SQL dump)  
+7. Run frontend / backend (and Docker)  
+8. Run tests  
+9. Assumptions  
+10. Known limitations  
+11. Demo credentials table (Admin / Teacher / Student)  
+12. Swagger URL / optional live URL  
+
+Also: `.env.example`; no secrets; repo public/accessible; submit https://q-rp.com/c/4CIs.
+
+**Exit:** Cold machine path verified once; checklist ticked; submitted.
+
+---
+
+## Build order vs deadline
+
+| When | Phases | Priority |
+| --- | --- | --- |
+| First | 0–1 | Scaffold + DB files |
+| Blocks UI | 2 | Auth + API RBAC |
+| Unlocks data | 3 | Admin complete |
+| Core product | 4–6 | Teacher + Student + grading |
+| Stand-out | 7 | Quality + Docker + filters + notifications + UI |
+| Proof | 8 | Tests + CI |
+| Ship | 9 | README + checklist + q-rp |
+
+**Must-ship for a pass:** Phases 0–6 + §3 quality + §8 tests + §9 docs/checklist.  
+**Mind-blowing package:** Phase 7 wow items complete.  
+If time collapses: cut live deploy first, then fancy dashboard charts; **never** cut API RBAC, tests, migrations/seed, or README demo accounts.
+
+---
+
+## Out of scope
+
+File uploads, email/SMS push, realtime chat, multi-tenant schools, OAuth social login, advanced BI analytics, MediatR/CQRS unless it clearly reduces complexity.
