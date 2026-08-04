@@ -1,12 +1,12 @@
 ---
 name: Assignment System Build
-overview: "Blow-their-minds submission for OnnoRokom: latest-stable ASP.NET Core 10 + Next.js 16 + PostgreSQL, strict Clean Architecture, every PDF must-have covered, plus Docker one-shot setup, filtering, in-app notifications, and CI — evaluator-ready by 14 Aug 2026."
+overview: "Blow-their-minds submission for OnnoRokom: latest-stable ASP.NET Core 10 + Next.js 16 + PostgreSQL, single API host under backend/ (layered folders, not multi-project CA), every PDF must-have covered, plus Docker one-shot setup, filtering, in-app notifications, and CI — evaluator-ready by 14 Aug 2026."
 todos:
   - id: phase-0-scaffold
-    content: "Phase 0: Latest-stable Clean Architecture scaffold, contracts, README/.env.example"
+    content: "Phase 0: Single API host in backend/ + Next.js + Health/Swagger + README/.env.example"
     status: pending
   - id: phase-1-domain-db
-    content: "Phase 1: Domain + EF migrations + seed + SQL dump for evaluators"
+    content: "Phase 1: Entities/DbContext in API host + EF migrations + seed + SQL dump"
     status: pending
   - id: phase-2-auth
     content: "Phase 2: JWT login, RBAC policies (API-enforced), frontend guards"
@@ -27,7 +27,7 @@ todos:
     content: "Phase 7: Brief quality bar + wow (pagination, filters, notifications, Docker, polish UI)"
     status: pending
   - id: phase-8-tests
-    content: "Phase 8: xUnit for business rules, authorization, submission workflows + CI"
+    content: "Phase 8: xUnit (sibling test project) for business rules, authz, workflows + CI"
     status: pending
   - id: phase-9-docs-submit
     content: "Phase 9: README per PDF §4, demo creds, §5 checklist, submit q-rp.com"
@@ -41,44 +41,52 @@ isProject: false
 **Deadline:** 14 August 2026 · **Submit:** https://q-rp.com/c/4CIs  
 **Bar:** Not “works.” Evaluator opens repo, runs Docker or README steps, logs in as all three roles, feels production software from a senior hire.
 
-Monorepo: `backend/` + `frontend/` + root README / `.env.example` / `docker-compose.yml`.
+Monorepo: `backend/` (single Web API host) + `frontend/` + root README / `.env.example` / `docker-compose.yml`.
+
+**Backend decision:** One runnable project only — `backend/backend.csproj`. Run with `cd backend && dotnet watch run`. No multi-project Clean Architecture solution. Organize with **folders inside the host**. Optional sibling test project later (Phase 8), never nested under the Api compile tree without excludes.
+
+```text
+SchoolManagement(.net)/
+├── README.md
+├── .env.example
+├── docker-compose.yml          # later
+├── docs/
+├── frontend/                   # Next.js 16
+└── backend/                    # ONLY API host
+    ├── backend.csproj
+    ├── Program.cs
+    ├── Controllers/
+    ├── Properties/
+    ├── appsettings*.json
+    ├── Domain/                 # entities, enums (Phase 1+)
+    ├── Services/               # use-cases (Phase 2+)
+    ├── DTOs/
+    ├── Data/                   # DbContext, configs, migrations
+    └── ...
+```
 
 ```mermaid
 flowchart TB
   subgraph clients [Frontend Next.js 16]
     Next[App Router + role layouts]
   end
-  subgraph api [Api Host]
+  subgraph host [backend single API host]
     Controllers[Thin controllers]
     Middleware[JWT Errors Serilog CORS]
-  end
-  subgraph application [Application]
-    Services[Use-case services]
+    Services[Services / use-cases]
     DTOs[DTOs + FluentValidation]
-    Ports[Ports / interfaces]
+    Domain[Entities Enums Rules]
+    Data[EF Core + Npgsql + JWT helpers]
   end
-  subgraph domain [Domain]
-    Entities[Entities Enums Rules]
-  end
-  subgraph infra [Infrastructure]
-    EF[EF Core + Npgsql]
-    JWT[JWT + password hashing]
-    Repos[Repository implementations]
-  end
-  subgraph data [PostgreSQL]
+  subgraph pg [PostgreSQL]
     PG[(Migrations + seed)]
   end
   Next -->|Bearer JWT| Middleware
   Middleware --> Controllers
   Controllers --> Services
-  Services --> Ports
-  Services --> Entities
-  Repos -.->|implements| Ports
-  EF --> PG
-  api --> application
-  api --> infra
-  infra --> application
-  application --> domain
+  Services --> Domain
+  Services --> Data
+  Data --> PG
 ```
 
 ---
@@ -127,7 +135,7 @@ Every bullet from the PDF is a hard requirement. Nothing below is optional.
 | ASP.NET Core Web API, C#, REST, validation, error handling, logging, Swagger/OpenAPI | ASP.NET Core **latest stable** (`.NET 10`), FluentValidation, exception middleware, Serilog, OpenAPI JWT |
 | PostgreSQL or MongoDB + relationships | **PostgreSQL + EF Core** (relational domain fits); migrations + seed so no manual DDL |
 | Login, JWT, role-based authorization | Phase 2 — **enforced on API** (checklist §5) |
-| Unit tests: business rules, authorization, submission workflows | Phase 8 — xUnit on Application services |
+| Unit tests: business rules, authorization, submission workflows | Phase 8 — xUnit sibling project referencing `backend` |
 
 ### §4 Submission pack
 
@@ -174,25 +182,33 @@ Ship via https://q-rp.com/c/4CIs · issues → hrd@onnorokom.com
 
 Install via `dotnet-install.sh --channel 10.0` (avoid broken distro `dotnet-sdk-5.0` paths). Patch-bump everything before Phase 9.
 
-**Forbidden:** business logic in controllers, EF entities as API contracts, Pages Router, secrets in git, Mongo without justification (we chose Postgres).
+**Forbidden:** fat controllers (business rules belong in Services), EF entities as API response contracts, Pages Router, secrets in git, Mongo without justification (we chose Postgres), nesting extra `.csproj` folders under `backend/` without excludes (breaks `dotnet run`).
 
 ---
 
-## Clean Architecture & production standards (non-negotiable)
+## Architecture & production standards (single API host)
 
-Dependencies point **inward** only.
+**One host project:** `backend/backend.csproj`. All HTTP endpoints live here. `cd backend && dotnet watch run` is the only run path.
 
-| Project | Responsibility | May reference |
-| --- | --- | --- |
-| `AssignmentSystem.Domain` | Entities, enums, domain exceptions, pure rules. No EF/HTTP/JWT. | BCL only |
-| `AssignmentSystem.Application` | Use-case services, DTOs, ports, FluentValidation, mapping. No DbContext, no Controllers. | Domain |
-| `AssignmentSystem.Infrastructure` | EF Core, repos, JWT, password hashing. Implements ports. | Application, Domain |
-| `AssignmentSystem.Api` | Composition root: DI, middleware, thin Controllers, OpenAPI. | Application, Infrastructure |
-| `AssignmentSystem.Tests` | Business rules, authz, submission workflows. | Application, Domain (+ test DB doubles) |
+Organize with folders (same assembly — no multi-project solution):
 
-**Rules every phase:** thin controllers · logic in Application/Domain · DTO boundaries · constructor DI · async + `CancellationToken` · FluentValidation · global errors · JWT + resource authz · Serilog (never log secrets) · `IOptions` + env · Fluent configs + migrations · frontend guards with server as source of truth · paginated lists · REST under `/api/...`.
+| Folder | Responsibility |
+| --- | --- |
+| `Controllers/` | Thin HTTP: auth, map DTOs, call services, return status codes |
+| `Domain/` (or `Entities/` + `Enums/`) | Entities, enums, domain exceptions, pure rules |
+| `DTOs/` | Request/response contracts for the API |
+| `Services/` | Use-case / business logic |
+| `Data/` | `DbContext`, Fluent configs, migrations, seed |
+| `Auth/` (optional) | JWT helpers, password hashing |
+| `Validators/` | FluentValidation validators |
 
-**Default:** plain Application services (not MediatR) — clean, not ceremonial.
+**Separate test project (Phase 8 only):** e.g. repo-level `tests/Backend.Tests/` referencing `backend/backend.csproj` — never place a test `.csproj` inside `backend/` unless `DefaultItemExcludes` is set.
+
+**Rules every phase:** thin controllers · logic in Services/Domain · DTO boundaries · constructor DI · async + `CancellationToken` · FluentValidation · global errors · JWT + resource authz · Serilog (never log secrets) · `IOptions` + env · Fluent configs + migrations · frontend guards with server as source of truth · paginated lists · REST under `/api/...`.
+
+**Default:** plain services registered in `Program.cs` (not MediatR) — clean, not ceremonial.
+
+**Out of scope for structure:** multi-project Domain/Application/Infrastructure classlibs. Folder layering inside the host is enough for this brief.
 
 ---
 
@@ -234,24 +250,26 @@ PDF lists these as optional. We ship them to stand out — **after** must-haves 
 
 ---
 
-## Phase 0 — Scaffold and contracts
+## Phase 0 — Single API host + frontend smoke
 
-**Goal:** Latest-stable empty shells, Clean Architecture wired, assumptions + env templates.
+**Goal:** Prove toolchain + monorepo: one backend host you run from `backend/`, Next.js up, Health + Swagger work.
 
 - Install .NET 10 SDK; Node Active LTS.  
-- Solution `backend/AssignmentSystem.sln` → Api / Domain / Application / Infrastructure / Tests (`net10.0`).  
-- Folders: Domain `Entities|Enums|Exceptions`; Application `Interfaces|DTOs|Services|Validators` + `AddApplication()`; Infrastructure `AddInfrastructure()`; Api wires both + Swagger.  
-- Frontend: `create-next-app@latest` (TS, Tailwind, App Router); `src/lib/api.ts` → `NEXT_PUBLIC_API_URL`.  
+- **`backend/` = only the Web API project** (`backend.csproj`, `Program.cs`, Controllers, Swagger).  
+  - `GET /api/Health` → `{ status: "ok" }`.  
+  - Run: `cd backend && dotnet watch run` (no `--project`, no nested classlibs).  
+- Do **not** add Domain/Application/Infrastructure/Tests projects under `backend/`.  
+- Frontend: `create-next-app@latest` in `frontend/` (TS, Tailwind, App Router); optional `lib/api.ts` → `NEXT_PUBLIC_API_URL`.  
 - Root README skeleton (PDF §4 headings), `.env.example`, `.gitignore`, assumptions section.  
 - Optional early: empty `docker-compose.yml` stub.
 
-**Exit:** `dotnet build`, `npm run dev`, Swagger loads; zero feature endpoints; layer refs correct.
+**Exit:** `dotnet build` / `dotnet watch run` from `backend/`; Swagger + Health 200; `npm run dev`; zero feature endpoints beyond Health.
 
 ---
 
 ## Phase 1 — Domain + database (PDF: relationships + DB files)
 
-**Goal:** Schema evaluators apply with **zero manual DDL**.
+**Goal:** Schema evaluators apply with **zero manual DDL** — all inside the single API host.
 
 | Entity | Notes |
 | --- | --- |
@@ -265,12 +283,12 @@ PDF lists these as optional. We ship them to stand out — **after** must-haves 
 | `AppSetting` | Key/value (or typed row) for admin settings |
 | `Notification` | UserId, type, title, body, isRead, createdAt (wow) |
 
-- Domain entities; Infrastructure Fluent configs + indexes; Application ports.  
+- Add folders under `backend/`: `Domain/` (entities/enums), `Data/` (DbContext, Fluent configs, migrations, seed).  
 - Migration + seed: 1 Admin, ≥1 Teacher, ≥2 Students, class/subjects, sample draft+published assignment, one sample submission.  
 - Export `docs/db/seed-backup.sql` after seed.  
 - Demo passwords only in README / seed (not production secrets).
 
-**Exit:** `dotnet ef database update` (or Compose) creates DB; seed users exist; Domain has zero EF refs.
+**Exit:** `dotnet ef database update` (or Compose) creates DB; seed users exist; still a **single** `backend.csproj`.
 
 ---
 
@@ -291,7 +309,7 @@ PDF lists these as optional. We ship them to stand out — **after** must-haves 
 
 **Goal:** Admin can configure the whole school from UI.
 
-**APIs → Application services:** users CRUD/deactivate/role; classes & subjects CRUD; assign teachers; enroll students; settings; read-only assignments & submissions (paginated + filters).
+**APIs → Services:** users CRUD/deactivate/role; classes & subjects CRUD; assign teachers; enroll students; settings; read-only assignments & submissions (paginated + filters).
 
 **UI:** Admin shell — Users, Classes, Subjects, Teacher assignments, Enrollments, Assignments overview, Submissions overview, Settings. Forms validated (Zod).
 
@@ -370,7 +388,7 @@ Minimum cases:
 4. **Enrollment:** student only sees own class assignments.  
 5. **Settings:** late allowed path marks Late (if implemented).
 
-Prefer Application-layer tests (mocks or EF InMemory/SQLite). README documents `dotnet test`.
+Prefer tests against Services (mocks or EF InMemory/SQLite). Place tests in **`tests/Backend.Tests/`** at repo root (sibling of `backend/`), not nested inside the host. README documents `dotnet test`.
 
 **Exit:** `dotnet test` green locally and in CI.
 
@@ -385,10 +403,10 @@ README **must** include (PDF wording):
 1. Short project overview  
 2. Main features  
 3. Technology stack (exact versions)  
-4. Project structure (Clean Architecture)  
+4. Project structure (single API host + folder layout + Next.js)  
 5. Setup instructions  
 6. Database setup (migrate + seed + optional SQL dump)  
-7. Run frontend / backend (and Docker)  
+7. Run frontend / backend (and Docker) — backend: `cd backend && dotnet run`  
 8. Run tests  
 9. Assumptions  
 10. Known limitations  
@@ -405,7 +423,7 @@ Also: `.env.example`; no secrets; repo public/accessible; submit https://q-rp.co
 
 | When | Phases | Priority |
 | --- | --- | --- |
-| First | 0–1 | Scaffold + DB files |
+| First | 0–1 | Single API host smoke + DB files |
 | Blocks UI | 2 | Auth + API RBAC |
 | Unlocks data | 3 | Admin complete |
 | Core product | 4–6 | Teacher + Student + grading |
@@ -421,4 +439,4 @@ If time collapses: cut live deploy first, then fancy dashboard charts; **never**
 
 ## Out of scope
 
-File uploads, email/SMS push, realtime chat, multi-tenant schools, OAuth social login, advanced BI analytics, MediatR/CQRS unless it clearly reduces complexity.
+File uploads, email/SMS push, realtime chat, multi-tenant schools, OAuth social login, advanced BI analytics, MediatR/CQRS, **multi-project Clean Architecture classlibs** (Domain/Application/Infrastructure as separate `.csproj`s).
