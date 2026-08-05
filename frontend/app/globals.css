@@ -1,26 +1,265 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-bg: #ece3cd;
+  --color-bg-soft: #f4eeda;
+  --color-surface: #fbf7ec;
+  --color-surface-raised: #fffdf6;
+  --color-ink: #24312a;
+  --color-ink-soft: #4d5d54;
+  --color-muted: #7c8a7f;
+  --color-border: #d8cba9;
+  --color-border-strong: #c3b48a;
+
+  --color-primary: #14463b;
+  --color-primary-dark: #0c2f28;
+  --color-primary-soft: #1f5f4f;
+  --color-on-primary: #f4eeda;
+
+  --color-accent: #a97726;
+  --color-accent-soft: #c99548;
+  --color-accent-bg: #f1e2c2;
+
+  --color-success: #2f6b45;
+  --color-success-bg: #e2ecdd;
+  --color-warning: #a97726;
+  --color-warning-bg: #f1e2c2;
+  --color-danger: #963a2e;
+  --color-danger-bg: #f3e0da;
+  --color-info: #2c5f75;
+  --color-info-bg: #dfe9ec;
+
+  --shadow-card: 0 1px 2px rgba(20, 30, 25, 0.06), 0 4px 14px rgba(20, 30, 25, 0.06);
+  --radius-card: 10px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-ink: var(--color-ink);
+  --color-primary: var(--color-primary);
+  --color-accent: var(--color-accent);
+  --font-serif: var(--font-source-serif), "Iowan Old Style", "Georgia", serif;
+  --font-sans: var(--font-source-sans), "Segoe UI", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+  color: var(--color-ink);
+  font-family: var(--font-sans, "Segoe UI", sans-serif);
+  background-color: var(--color-bg);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(36, 49, 42, 0.055) 1px, transparent 0),
+    linear-gradient(180deg, var(--color-bg-soft) 0%, var(--color-bg) 340px);
+  background-size: 22px 22px, 100% 100%;
+  background-attachment: fixed;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif, serif);
+  color: var(--color-primary-dark);
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: var(--color-accent-bg);
+  color: var(--color-primary-dark);
+}
+
+/* Scrollbar: subtle academic look */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 8px;
+}
+
+/* Shared component classes */
+.sm-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.sm-input {
+  width: 100%;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-raised);
+  color: var(--color-ink);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sm-input:focus {
+  outline: none;
+  border-color: var(--color-primary-soft);
+  box-shadow: 0 0 0 3px rgba(20, 70, 59, 0.12);
+}
+
+.sm-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-ink-soft);
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.88rem;
+  border-radius: 8px;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.sm-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sm-btn-primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.sm-btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.sm-btn-secondary {
+  background: transparent;
+  border-color: var(--color-border-strong);
+  color: var(--color-primary-dark);
+}
+.sm-btn-secondary:hover:not(:disabled) {
+  background: var(--color-surface-raised);
+}
+
+.sm-btn-danger {
+  background: transparent;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+.sm-btn-danger:hover:not(:disabled) {
+  background: var(--color-danger-bg);
+}
+
+.sm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.sm-badge-draft {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border-color: rgba(169, 119, 38, 0.35);
+}
+
+.sm-badge-published {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border-color: rgba(47, 107, 69, 0.3);
+}
+
+.sm-badge-info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border-color: rgba(44, 95, 117, 0.3);
+}
+
+.sm-badge-danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-color: rgba(150, 58, 46, 0.3);
+}
+
+.sm-badge-muted {
+  background: var(--color-border);
+  color: var(--color-ink-soft);
+}
+
+.sm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.sm-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-soft);
+  font-weight: 700;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--color-border-strong);
+  background: var(--color-bg-soft);
+}
+
+.sm-table td {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.sm-table tr:last-child td {
+  border-bottom: none;
+}
+
+.sm-table tbody tr:hover {
+  background: rgba(20, 70, 59, 0.035);
+}
+
+.sm-alert {
+  border-radius: 8px;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.85rem;
+  border: 1px solid transparent;
+}
+
+.sm-alert-danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-color: rgba(150, 58, 46, 0.3);
+}
+
+.sm-alert-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border-color: rgba(47, 107, 69, 0.3);
 }

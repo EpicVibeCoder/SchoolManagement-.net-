@@ -4,34 +4,34 @@ overview: "Blow-their-minds submission for OnnoRokom: latest-stable ASP.NET Core
 todos:
   - id: phase-0-scaffold
     content: "Phase 0: Single API host in backend/ + Next.js + Health/Swagger + README/.env.example"
-    status: pending
+    status: completed
   - id: phase-1-domain-db
     content: "Phase 1: Entities/DbContext in API host + EF migrations + seed + SQL dump"
-    status: pending
+    status: completed
   - id: phase-2-auth
     content: "Phase 2: JWT login, RBAC policies (API-enforced), frontend guards"
-    status: pending
+    status: completed
   - id: phase-3-admin
     content: "Phase 3: Full Admin role surface (users, classes, subjects, assign teachers, settings, overview)"
-    status: pending
+    status: completed
   - id: phase-4-teacher-assignments
     content: "Phase 4: Teacher assignment CRUD + draft/publish + class/subject scope"
-    status: pending
+    status: completed
   - id: phase-5-student-submissions
     content: "Phase 5: Student view/submit/update + deadline + status/marks/feedback"
-    status: pending
+    status: completed
   - id: phase-6-grading
     content: "Phase 6: Teacher review, marks, feedback, submission status changes"
-    status: pending
+    status: completed
   - id: phase-7-quality-wow
     content: "Phase 7: Brief quality bar + wow (pagination, filters, notifications, Docker, polish UI)"
-    status: pending
+    status: completed
   - id: phase-8-tests
     content: "Phase 8: xUnit (sibling test project) for business rules, authz, workflows + CI"
-    status: pending
+    status: completed
   - id: phase-9-docs-submit
     content: "Phase 9: README per PDF §4, demo creds, §5 checklist, submit q-rp.com"
-    status: pending
+    status: completed
 isProject: false
 ---
 

@@ -95,16 +95,16 @@ SchoolManagement(.net)/
 
 | Phase | Description | Status |
 | --- | --- | --- |
-| **Phase 0** | Single API host scaffold (.NET 10), Next.js 16 app init, `/api/Health` endpoint, Docker Compose PostgreSQL setup, `.env.example` setup | ✅ **Completed** |
-| **Phase 1** | Domain entities, EF Core DbContext, PostgreSQL migrations, Seed data script & SQL backup | ⏳ *In Progress / Next* |
-| **Phase 2** | JWT Authentication, API-enforced RBAC policies, Frontend route guards | 📅 Planned |
-| **Phase 3** | Admin role surface (Users, Classes, Subjects, Teacher Allocation, Settings) | 📅 Planned |
-| **Phase 4** | Teacher assignment management (CRUD, Draft/Publish, Class/Subject scoping) | 📅 Planned |
-| **Phase 5** | Student submission workflow (View, Submit, Update before deadline) | 📅 Planned |
-| **Phase 6** | Teacher grading workflow (Marks, Feedback, Submission status transitions) | 📅 Planned |
-| **Phase 7** | Quality bar & Wow tier (Pagination, Filters, Notifications, Docker Compose complete) | 📅 Planned |
-| **Phase 8** | Automated xUnit testing (Business rules, RBAC authorization, submission workflows) | 📅 Planned |
-| **Phase 9** | Submission packaging, documentation polish, final checklist verification | 📅 Planned |
+| **Phase 0** | Single API host scaffold, Next.js 16, Health, Docker Postgres | ✅ Completed |
+| **Phase 1** | Domain entities, EF migrations, seed data, SQL dump | ✅ Completed |
+| **Phase 2** | JWT auth, API RBAC, frontend login + role guards | ✅ Completed |
+| **Phase 3** | Admin users, classes, subjects, assignments, enrollments, settings | ✅ Completed |
+| **Phase 4** | Teacher assignment CRUD + draft/publish | ✅ Completed |
+| **Phase 5** | Student view/submit/update | ✅ Completed |
+| **Phase 6** | Teacher grading + notifications | ✅ Completed |
+| **Phase 7** | FluentValidation, Serilog, CORS, filters, CI | ✅ Completed |
+| **Phase 8** | xUnit business-rule tests | ✅ Completed |
+| **Phase 9** | README, demo credentials, DB backup | ✅ Completed |
 
 ---
 
@@ -145,18 +145,26 @@ npm run dev
 ```
 - **Web Application URL:** `http://localhost:3000`
 
-### Step 5: Database Migrations (Phase 1+)
-To apply Entity Framework Core migrations to the PostgreSQL database:
+### Step 5: Database Migrations & Seed
+On API startup the host runs `Migrate` + seed automatically. You can also apply manually:
 ```bash
 cd backend
 dotnet ef database update
 ```
+SQL backup (after seed): `docs/db/seed-backup.sql`
 
-### Step 6: Running Automated Tests (Phase 8+)
-To run the xUnit test suite:
+### Step 6: Running Automated Tests
 ```bash
-dotnet test
+dotnet test tests/Backend.Tests/Backend.Tests.csproj
 ```
+
+Optional pgAdmin (Docker profile `tools`):
+```bash
+docker compose --profile tools up -d pgadmin
+# http://localhost:5050 — connect host `school_pg`, db/user/pass from `.env`
+```
+
+Or use **pgAdmin Desktop** → `localhost:5432` with the same credentials.
 
 ---
 
@@ -185,14 +193,14 @@ dotnet test
 
 ## 9. Demo Credentials
 
-*(Demo credentials will be active following Phase 1 database seeding)*
-
 | Role | Email | Password | Scope & Permissions |
 | --- | --- | --- | --- |
 | **Admin** | `admin@school.com` | `Admin123!` | Full administrative access across all modules |
 | **Teacher** | `teacher@school.com` | `Teacher123!` | Manage assignments and grade submissions for assigned subjects |
 | **Student** | `student1@school.com` | `Student123!` | View enrolled assignments, submit responses, track feedback |
 | **Student** | `student2@school.com` | `Student123!` | View enrolled assignments, submit responses, track feedback |
+
+**Swagger:** http://localhost:5000/swagger · **App:** http://localhost:3000
 
 ---
 
@@ -204,7 +212,9 @@ dotnet test
 - [x] Environment configuration template (`.env.example`) provided
 - [x] Docker Compose setup for PostgreSQL instance
 - [x] Health check endpoint (`GET /api/Health`) operational
-- [ ] EF Core migrations and initial seed data (Phase 1)
-- [ ] API-enforced Role-Based Access Control (Phase 2)
-- [ ] Admin, Teacher, and Student features implemented (Phases 3–6)
-- [ ] xUnit test suite for business rules and RBAC (Phase 8)
+- [x] EF Core migrations and initial seed data
+- [x] API-enforced Role-Based Access Control
+- [x] Admin, Teacher, and Student features implemented
+- [x] xUnit test suite for business rules and RBAC
+- [x] No real production secrets committed (demo JWT key documented in `.env.example`)
+- [x] DB backup file under `docs/db/seed-backup.sql`
