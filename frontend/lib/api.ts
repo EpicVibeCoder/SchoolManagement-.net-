@@ -85,8 +85,6 @@ export interface SubjectDto {
   id: string;
   name: string;
   code: string;
-  classId: string;
-  className?: string | null;
 }
 
 export interface CreateSubjectRequest {
