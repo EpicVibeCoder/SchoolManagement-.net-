@@ -1,0 +1,10 @@
+.git
+.gitignore
+.vs
+.vscode
+**/.env
+**/bin
+**/obj
+**/node_modules
+README.md
+frontend

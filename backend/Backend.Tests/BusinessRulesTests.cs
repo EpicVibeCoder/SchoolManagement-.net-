@@ -45,7 +45,7 @@ public class BusinessRulesTests : IDisposable
             new User { Id = _otherTeacherId, Email = "t2@s.com", FullName = "T2", Role = UserRole.Teacher, PasswordHash = "x", CreatedAt = now, UpdatedAt = now },
             new User { Id = _studentId, Email = "s@s.com", FullName = "S", Role = UserRole.Student, PasswordHash = "x", CreatedAt = now, UpdatedAt = now });
         _db.Classes.Add(new Class { Id = _classId, Name = "C", Code = "C1", AcademicYear = "2026", CreatedAt = now, UpdatedAt = now });
-        _db.Subjects.Add(new Subject { Id = _subjectId, Name = "Math", Code = "M", ClassId = _classId, CreatedAt = now, UpdatedAt = now });
+        _db.Subjects.Add(new Subject { Id = _subjectId, Name = "Math", Code = "M", CreatedAt = now, UpdatedAt = now });
         _db.TeacherAssignments.Add(new TeacherAssignment
         {
             Id = Guid.NewGuid(), TeacherId = _teacherId, ClassId = _classId, SubjectId = _subjectId, CreatedAt = now

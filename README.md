@@ -239,3 +239,43 @@ Or use **pgAdmin Desktop** → `localhost:5432` with the same credentials.
 - [x] xUnit test suite for business rules and RBAC
 - [x] No real production secrets committed (demo JWT key documented in `.env.example`)
 - [x] DB backup file under `docs/db/seed-backup.sql`
+- [x] Dockerfile and Render Blueprint (`render.yaml`) for backend deployment
+- [x] Automated GitHub Actions CI/CD pipeline for Render deployment (`.github/workflows/deploy-backend.yml`)
+
+---
+
+## 11. Deploying Backend to Render with CI/CD
+
+### Option A: Quick Blueprint Deployment (Recommended)
+1. Push your repository to GitHub.
+2. Sign in to [Render](https://render.com).
+3. Click **New +** -> **Blueprint**.
+4. Connect your GitHub repository. Render will automatically detect [`render.yaml`](file:///home/ash/githubRepos/SchoolManagement(.net)/render.yaml) and configure:
+   - Web Service: `.NET 10 API` (built via [`backend/Dockerfile`](file:///home/ash/githubRepos/SchoolManagement(.net)/backend/Dockerfile))
+   - Database: Managed PostgreSQL database (`school-management-db`) with automatic `DATABASE_URL` linking.
+5. Click **Apply**.
+
+### Option B: Manual Web Service Setup
+1. In Render Dashboard, click **New +** -> **Web Service**.
+2. Connect your repo and set:
+   - **Environment:** `Docker`
+   - **Dockerfile Path:** `./backend/Dockerfile`
+   - **Docker Context:** `.`
+   - **Health Check Path:** `/api/health`
+3. Add Environment Variables:
+   - `ASPNETCORE_ENVIRONMENT`: `Production`
+   - `DATABASE_URL`: Connection string from your Render PostgreSQL instance
+   - `Jwt__Key`: Random string of 32+ characters
+   - `Jwt__Issuer`: `SchoolManagementApp`
+   - `Jwt__Audience`: `SchoolManagementApp`
+   - `FRONTEND_ORIGIN`: URL of your deployed frontend (e.g., `https://your-app.onrender.com`)
+
+### Setting Up Automated CI/CD (GitHub Actions)
+1. Open your Web Service settings in **Render Dashboard**.
+2. Scroll to **Deploy Hook** and copy your unique Deploy Hook URL.
+3. In your **GitHub Repository**, go to **Settings** -> **Secrets and variables** -> **Actions**.
+4. Add a new secret:
+   - **Name:** `RENDER_DEPLOY_HOOK_URL`
+   - **Value:** Paste your Render Deploy Hook URL.
+5. Whenever changes are pushed to `main` or `master`, [`.github/workflows/deploy-backend.yml`](file:///home/ash/githubRepos/SchoolManagement(.net)/.github/workflows/deploy-backend.yml) will automatically run tests and trigger deployment on Render upon success.
+

@@ -44,18 +44,32 @@ try
         builder.Configuration.AddEnvironmentVariables();
     }
 
-    var pgHost = builder.Configuration["POSTGRES_HOST"] ?? "localhost";
-    var pgPort = builder.Configuration["POSTGRES_PORT"]
-        ?? throw new InvalidOperationException("POSTGRES_PORT is missing.");
-    var pgDb = builder.Configuration["POSTGRES_DB"]
-        ?? throw new InvalidOperationException("POSTGRES_DB is missing.");
-    var pgUser = builder.Configuration["POSTGRES_USER"]
-        ?? throw new InvalidOperationException("POSTGRES_USER is missing.");
-    var pgPassword = builder.Configuration["POSTGRES_PASSWORD"]
-        ?? throw new InvalidOperationException("POSTGRES_PASSWORD is missing.");
+    var connectionString = builder.Configuration["DATABASE_URL"];
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        var pgHost = builder.Configuration["POSTGRES_HOST"] ?? "localhost";
+        var pgPort = builder.Configuration["POSTGRES_PORT"]
+            ?? throw new InvalidOperationException("POSTGRES_PORT is missing.");
+        var pgDb = builder.Configuration["POSTGRES_DB"]
+            ?? throw new InvalidOperationException("POSTGRES_DB is missing.");
+        var pgUser = builder.Configuration["POSTGRES_USER"]
+            ?? throw new InvalidOperationException("POSTGRES_USER is missing.");
+        var pgPassword = builder.Configuration["POSTGRES_PASSWORD"]
+            ?? throw new InvalidOperationException("POSTGRES_PASSWORD is missing.");
 
-    var connectionString =
-        $"Host={pgHost};Port={pgPort};Database={pgDb};Username={pgUser};Password={pgPassword}";
+        connectionString = $"Host={pgHost};Port={pgPort};Database={pgDb};Username={pgUser};Password={pgPassword}";
+    }
+    else if (connectionString.StartsWith("postgres://") || connectionString.StartsWith("postgresql://"))
+    {
+        var uri = new Uri(connectionString);
+        var userInfo = uri.UserInfo.Split(':');
+        var user = Uri.UnescapeDataString(userInfo[0]);
+        var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+        var port = uri.Port > 0 ? uri.Port : 5432;
+        var db = uri.AbsolutePath.TrimStart('/');
+
+        connectionString = $"Host={uri.Host};Port={port};Database={db};Username={user};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+    }
 
     builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
     var jwtKey = builder.Configuration["Jwt:Key"]
