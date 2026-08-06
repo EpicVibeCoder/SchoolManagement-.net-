@@ -1,281 +1,322 @@
-# Assignment & Submission Management System
+<div align="center">
 
-> **Recruitment Project for OnnoRokom — Assistant Software Engineer**  
-> **Submission Deadline:** 14 August 2026 · **Portal:** [q-rp.com/c/4CIs](https://q-rp.com/c/4CIs)
+# 🎓 School Management System
 
----
+### *An enterprise-grade, high-performance Academic & Assignment Management Platform*
 
-## 1. Project Overview
-
-The **Assignment & Submission Management System** is a full-stack, enterprise-ready web application built for academic institutions to manage user roles, class/subject assignments, student submissions, and teacher grading workflows with feedback.
-
-Built following a single Web API host architecture in **ASP.NET Core 10** paired with a **Next.js 16** frontend and **PostgreSQL** database, the platform enforces strict API-level Role-Based Access Control (RBAC) across three primary user roles: **Admin**, **Teacher**, and **Student**.
-
----
-
-## 2. Main Features
-
-### 🔑 Role-Based Access Control (RBAC)
-
-- **JWT Authentication:** Secure Token-based login with claims (`sub`, `email`, `role`).
-- **Backend-Enforced Authorization:** API endpoints independently verify JWT tokens and permissions before performing operations.
-
-### 👑 Admin Management (§2 Admin)
-
-- **User Management:** Create, update, deactivate users, and assign roles.
-- **Academic Setup:** Full CRUD operations for Classes/Courses and Subjects.
-- **Teacher Allocation:** Map teachers to specific Class + Subject combinations (`TeacherAssignment`).
-- **Student Enrollment:** Assign students to specific classes.
-- **Application Settings:** Configure global settings such as `AllowLateSubmissions`.
-- **Overview Dashboards:** Read-only visibility into all assignments and student submissions across the institution.
-
-### 👩‍🏫 Teacher Workspace (§2 Teacher)
-
-- **Assignment CRUD:** Create, update, and delete assignments for assigned class and subject pairs.
-- **Draft & Publish:** Keep assignments as drafts or publish them to make them visible to students.
-- **Review & Grading:** View student submissions, award marks (`0..MaxMarks`), provide text feedback, and update submission status (`Submitted` → `Graded` / `Returned`).
-
-### 🎓 Student Portal (§2 Student)
-
-- **Class Assignments View:** View published assignments relevant to enrolled classes.
-- **Submission Workflow:** Submit text-based responses prior to set deadlines.
-- **Submission Updates:** Edit submissions before deadline if not yet graded.
-- **Feedback & Marks:** Access earned marks, status changes, and teacher feedback.
-
-### 🚀 Production Quality & Wow Tier (Planned)
-
-- **Docker Compose:** One-command docker orchestration (`postgres`, `api`, `web`).
-- **Pagination & Filtering:** Search, role/status/class filters, and deadline sorting across lists.
-- **In-App Notifications:** Persisted notifications for published assignments and graded submissions.
-- **Health & Logging:** Standardized `/api/Health` endpoint and Serilog request correlation.
+[![.NET 10.0](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16.3-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![React 19](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![PostgreSQL 18](https://img.shields.io/badge/PostgreSQL-18.2-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS-4.0-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![TypeScript 5](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/features/actions)
 
 ---
 
-## 3. Technology Stack
-
-| Component                | Technology / Framework    | Version / Details                            |
-| ------------------------ | ------------------------- | -------------------------------------------- |
-| **Backend API Host**     | ASP.NET Core Web API      | **.NET 10** (`net10.0` LTS)                  |
-| **Database**             | PostgreSQL                | **18.2-alpine** (via Docker Compose)         |
-| **ORM**                  | Entity Framework Core     | **10.x** (Npgsql EF Core Provider)           |
-| **Validation & Logging** | FluentValidation, Serilog | Latest stable NuGet packages                 |
-| **API Documentation**    | OpenAPI / Swagger UI      | Integrated ASP.NET Core OpenAPI + Swagger UI |
-| **Frontend Framework**   | Next.js                   | **16.x** (App Router, React 19, TypeScript)  |
-| **Styling & UI**         | Tailwind CSS              | Modern, responsive CSS design                |
-| **Forms & Schemas**      | React Hook Form + Zod     | Schema-based form validation                 |
-| **Automated Testing**    | xUnit                     | Test project (`backend/Backend.Tests`)       |
+[Architecture & Design](#-architecture--design) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [Testing](#-testing) • [Database & Migrations](#-database--migrations) • [Demo Credentials](#-demo-credentials) • [API & Health](#-api--health-monitoring) • [Deployment](#-deployment-guide)
 
 ---
 
-## 4. Project Structure
+</div>
 
-The project is organized as a clean monorepo with a single Web API host in `backend/` and Next.js SPA in `frontend/`:
+## 📌 Executive Summary
+
+The **School Management System** is a production-ready, full-stack monorepo web application engineered for educational institutions to manage user roles, academic structures (classes and subjects), teacher assignments, student course submissions, and automated/manual grading workflows.
+
+Built around a modern **single ASP.NET Core 10 Web API host** and a **Next.js 16 App Router SPA**, the platform features strict server-side **Role-Based Access Control (RBAC)** across three primary user personas: **Admin**, **Teacher**, and **Student**.
+
+---
+
+## 🏗️ Architecture & Design
+
+The repository is structured as a clean monorepo separating server-side Web API concerns from client-side UI workflows while sharing environment configurations and Docker orchestration services.
 
 ```text
 SchoolManagement(.net)/
-├── .cursor/plans/              # Build plan & architecture specifications
-├── docs/                       # Database backup & documentation resources
-├── frontend/                   # Next.js 16 App Router application
-│   ├── app/                    # Routes, layouts, and role dashboards
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── ...
-├── backend/                    # Single ASP.NET Core 10 API Host
-│   ├── backend.csproj          # Single runnable API project
-│   ├── Program.cs              # Application bootstrapper & configuration
-│   ├── Controllers/            # Thin REST HTTP controllers
-│   ├── Domain/                 # Domain entities & enums
-│   ├── Services/               # Use-case business logic
-│   ├── DTOs/                   # Request/Response contracts
-│   ├── Data/                   # DbContext, EF configurations & migrations
-│   └── appsettings.json
-├── docker-compose.yml          # Infrastructure containerization
-├── .env.example                # Monorepo environment configuration template
-└── README.md                   # Evaluator & developer documentation
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                 # Automated unit tests & frontend lint/typecheck
+│       └── deploy-backend.yml     # Production Render deployment trigger pipeline
+├── backend/                       # ASP.NET Core 10 Web API Solution
+│   ├── Backend.Tests/             # xUnit test suite (Business rules & RBAC validation)
+│   │   ├── BusinessRulesTests.cs
+│   │   └── Backend.Tests.csproj
+│   ├── src/                       # Single Web API Host executable project
+│   │   ├── Auth/                  # JWT Token Service & Claims Handler
+│   │   ├── Controllers/           # Thin REST HTTP API Controllers
+│   │   ├── Data/                  # DbContext, EF Core Configurations & Migrations
+│   │   ├── Domain/                # Domain Entities, Enums, and Value Objects
+│   │   ├── DTOs/                  # Request/Response Data Transfer Contracts
+│   │   ├── Middleware/            # Exception Handling & Correlation Log Middlewares
+│   │   ├── Services/              # Business Domain Logic & Use-Case Services
+│   │   ├── Validators/            # FluentValidation Input Rules
+│   │   ├── Program.cs             # Application Entry Point & DI Container Setup
+│   │   └── backend.csproj
+│   ├── Dockerfile                 # Multi-stage production container build manifest
+│   └── SchoolManagement.slnx      # .NET Solution file
+├── frontend/                      # Next.js 16 App Router Single Page Application
+│   ├── app/                       # Dashboard layouts, role-guarded pages & routes
+│   ├── components/                # Reusable UI component library (Tailwind v4)
+│   ├── lib/                       # API HTTP client, auth helpers & state utilities
+│   ├── package.json               # Node.js dependencies & execution scripts
+│   └── tsconfig.json              # Strict TypeScript configuration
+├── docs/                          # API Postman collections, DB SQL backups & specs
+│   ├── db/
+│   │   └── seed-backup.sql        # Pre-seeded database state SQL dump
+│   ├── School Management API.postman_collection.json
+│   └── SchoolSchema.png           # Database ER diagram
+├── docker-compose.yml             # Infrastructure orchestration (PostgreSQL & pgAdmin)
+├── render.yaml                    # Cloud deployment blueprint spec for Render
+├── .env.example                   # Shared environment configuration template
+└── README.md                      # System documentation
 ```
 
----
+### Key Architectural Highlights
 
-## 5. Current Project Status
-
-| Phase       | Description                                                        | Status       |
-| ----------- | ------------------------------------------------------------------ | ------------ |
-| **Phase 0** | Single API host scaffold, Next.js 16, Health, Docker Postgres      | ✅ Completed |
-| **Phase 1** | Domain entities, EF migrations, seed data, SQL dump                | ✅ Completed |
-| **Phase 2** | JWT auth, API RBAC, frontend login + role guards                   | ✅ Completed |
-| **Phase 3** | Admin users, classes, subjects, assignments, enrollments, settings | ✅ Completed |
-| **Phase 4** | Teacher assignment CRUD + draft/publish                            | ✅ Completed |
-| **Phase 5** | Student view/submit/update                                         | ✅ Completed |
-| **Phase 6** | Teacher grading + notifications                                    | ✅ Completed |
-| **Phase 7** | FluentValidation, Serilog, CORS, filters, CI                       | ✅ Completed |
-| **Phase 8** | xUnit business-rule tests                                          | ✅ Completed |
-| **Phase 9** | README, demo credentials, DB backup                                | ✅ Completed |
+- **Single API Host Architecture:** A consolidated ASP.NET Core 10 Web API project serving all RESTful endpoints, minimizing deployment complexity and cross-service overhead.
+- **Layered Clean Architecture:** Strict separation between Controller (HTTP routing), Service (Business Logic), Data (EF Core persistence), and Domain (Entities & Business Invariants).
+- **Stateless JWT Authentication:** Secure JSON Web Tokens containing `sub`, `email`, and `role` claims, verified server-side via `[Authorize(Roles = ...)]` attributes.
+- **Declarative Form Validation:** Automatic request body validation using **FluentValidation** on the backend and **Zod + React Hook Form** on the frontend.
+- **Structured Serilog Logging:** HTTP request correlation IDs and log formatting via Serilog console sinks.
 
 ---
 
-## 6. Setup & Running Instructions
+## ⚡ Tech Stack
+
+| Domain | Technology | Version | Description & Role |
+| :--- | :--- | :--- | :--- |
+| **Backend Framework** | ASP.NET Core Web API | `.NET 10.0` | High-throughput REST API Web Host |
+| **Database** | PostgreSQL | `18.2-alpine` | Relational database via Docker Compose |
+| **ORM** | Entity Framework Core | `10.0.10` | Database persistence & Npgsql EF provider |
+| **Backend Validation** | FluentValidation | `12.1.1` | Fluent request contract validation |
+| **Backend Security** | BCrypt.Net & JwtBearer | `4.2.0` / `10.0.10` | Password hashing & JWT token authentication |
+| **Backend Logging** | Serilog | `10.0.0` | Structured JSON request logging & correlation |
+| **API Documentation** | OpenAPI & Swagger UI | `10.0.10` / `10.2.3` | Interactive API documentation viewer |
+| **Frontend Framework**| Next.js (App Router) | `16.3.0` | React server components & client dashboards |
+| **UI Library & Style** | React 19 & Tailwind CSS | `19.2.8` / `4.0` | Declarative UI rendering & modern styles |
+| **Frontend Forms** | React Hook Form & Zod | `7.84` / `4.4` | Schema-validated client forms |
+| **Testing Framework** | xUnit & FluentAssertions | `2.9.3` / `8.10.0` | Unit & business-rule automated test suite |
+| **Containerization** | Docker & Docker Compose | `v2+` | Multi-container dev & production runtime |
+
+---
+
+## 🔒 Role-Based Access Control (RBAC) Matrix
+
+The system enforces granular authorization rules to restrict operations by user role:
+
+| Feature / Action | Admin | Teacher | Student |
+| :--- | :---: | :---: | :---: |
+| **Manage Users (Create/Update/Deactivate)** | ✅ | ❌ | ❌ |
+| **Manage Classes & Subjects** | ✅ | ❌ | ❌ |
+| **Assign Teachers to Subject & Class** | ✅ | ❌ | ❌ |
+| **Enroll Students in Class** | ✅ | ❌ | ❌ |
+| **Configure System Settings (e.g. Late Submissions)** | ✅ | ❌ | ❌ |
+| **View Institutional Dashboards & Statistics** | ✅ | ❌ | ❌ |
+| **Create / Edit / Delete Assignments** | ❌ | ✅ (Assigned only) | ❌ |
+| **Publish / Unpublish Assignments** | ❌ | ✅ (Assigned only) | ❌ |
+| **Grade Submissions & Provide Feedback** | ❌ | ✅ (Assigned only) | ❌ |
+| **View Enrolled Class Assignments** | ❌ | ❌ | ✅ |
+| **Submit & Edit Assignment Responses** | ❌ | ❌ | ✅ |
+| **View Received Grades & Teacher Feedback** | ❌ | ❌ | ✅ |
+| **Access In-App Notifications** | ✅ | ✅ | ✅ |
+
+---
+
+## 🚀 Quick Start
+
+Follow these steps to run the complete solution locally.
 
 ### Prerequisites
 
-- **.NET 10 SDK** (Verify with `dotnet --version`)
-- **Node.js Active LTS** (v20+ / v22+) & `npm`
-- **Docker & Docker Compose** (for PostgreSQL instance)
+Ensure you have installed:
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`dotnet --version`)
+- [Node.js (v20 or v22 LTS)](https://nodejs.org/) & `npm` (`node --version`)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) or Docker Engine with Docker Compose
 
-### Step 1: Environment Configuration
+---
 
-Copy `.env.example` to `.env` in the root directory:
+### Step 1: Clone Repository & Setup Environment
 
 ```bash
+# 1. Clone the repository
+git clone https://github.com/EpicVibeCoder/SchoolManagement-.net-.git
+cd SchoolManagement-.net-
+
+# 2. Copy the environment configuration template
 cp .env.example .env
 ```
 
-### Step 2: Database Setup (Docker)
+---
 
-Start the PostgreSQL container:
+### Step 2: Spin Up Database Infrastructure
+
+Start PostgreSQL container in background:
 
 ```bash
 docker compose up -d postgres
 ```
 
+*(Optional)* Start `pgAdmin4` for database management:
+
+```bash
+docker compose --profile tools up -d pgadmin
+```
+- **pgAdmin URL:** `http://localhost:5050` (Login: `admin@local.com` / `admin`)
+
+---
+
 ### Step 3: Run Backend Web API
 
-Navigate to `backend/` and start the ASP.NET Core host:
+Navigate to the `backend/` directory and execute:
 
 ```bash
 cd backend
-dotnet watch run
+dotnet restore
+dotnet watch run --project src/backend.csproj
 ```
 
-- **API Base URL:** `http://localhost:5000` (or configured HTTPS port)
-- **Health Check Endpoint:** `http://localhost:5000/api/Health`
+- **API Base URL:** `http://localhost:5000`
 - **Swagger Documentation:** `http://localhost:5000/swagger`
+- **Health Check:** `http://localhost:5000/api/Health`
 
-### Step 4: Run Frontend Web Application
+*Note: Database migrations and initial seed data apply automatically on backend startup.*
 
-In a separate terminal window, navigate to `frontend/` and run the development server:
+---
+
+### Step 4: Run Frontend Application
+
+In a new terminal window, navigate to the `frontend/` directory and run:
 
 ```bash
 cd frontend
+npm install
 npm run dev
 ```
 
 - **Web Application URL:** `http://localhost:3000`
 
-### Step 5: Database Migrations & Seed
+---
 
-On API startup the host runs `Migrate` + seed automatically. You can also apply manually:
+## 🧪 Testing
+
+The solution includes automated backend tests built with **xUnit**, **FluentAssertions**, and **EF Core InMemory provider**.
+
+### Run Backend Unit & Integration Tests
+
+```bash
+# Execute xUnit test suite from repository root
+dotnet test backend/Backend.Tests/Backend.Tests.csproj --configuration Release
+```
+
+### Run Frontend Typecheck & Linting
+
+```bash
+cd frontend
+npm run lint
+npx tsc --noEmit
+```
+
+---
+
+## 💾 Database & Migrations
+
+### Entity Relationship Model
+
+The PostgreSQL database enforces relational integrity across:
+- **`Users`**: System users (Admin, Teacher, Student) with hashed passwords (`BCrypt`).
+- **`Classes` & `Subjects`**: Academic structures (e.g., *Class 10*, *Mathematics*).
+- **`TeacherAssignments`**: Composite mapping between Teacher, Class, and Subject.
+- **`Enrollments`**: Mapping between Student and Class.
+- **`Assignments`**: Course work created by teachers with `IsPublished` state and deadline constraints.
+- **`Submissions`**: Student answers with `Marks`, `Feedback`, and `Status` (`Submitted`, `Graded`, `Returned`, `Late`).
+- **`Notifications`**: Real-time persisted user notification alerts.
+- **`SystemSettings`**: Global configuration flags (e.g. `AllowLateSubmissions`).
+
+### EF Core CLI Commands
+
+To add or apply Entity Framework Core migrations:
 
 ```bash
 cd backend
-dotnet ef database update
+
+# Add a new migration
+dotnet ef migrations add <MigrationName> --project src/backend.csproj
+
+# Apply pending migrations to PostgreSQL database
+dotnet ef database update --project src/backend.csproj
 ```
 
-SQL backup (after seed): `docs/db/seed-backup.sql`
+### SQL Seed Backup
 
-### Step 6: Running Automated Tests
+A pre-populated database snapshot is available at [`docs/db/seed-backup.sql`](file:///home/ash/githubRepos/SchoolManagement(.net)/docs/db/seed-backup.sql).
 
-```bash
-dotnet test backend/Backend.Tests/Backend.Tests.csproj
+---
+
+## 🔑 Demo Credentials
+
+Use the pre-seeded credentials below to explore the application across different access levels:
+
+| Role | Email | Password | Scope & Description |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `admin@school.com` | `Admin123!` | Full administrative privilege across all system modules |
+| **Teacher** | `teacher@school.com` | `Teacher123!` | Can create/manage assignments & grade student work |
+| **Student 1** | `student1@school.com` | `Student123!` | Enrolled student persona for submitting assignments |
+| **Student 2** | `student2@school.com` | `Student123!` | Secondary enrolled student persona |
+
+---
+
+## 📡 API & Health Monitoring
+
+### Health Check Endpoint
+
+```http
+GET /api/Health
+```
+**Response (200 OK):**
+```json
+{
+  "status": "Healthy",
+  "timestamp": "2026-08-07T01:31:18Z",
+  "database": "Connected"
+}
 ```
 
-Optional pgAdmin (Docker profile `tools`):
-
-```bash
-docker compose --profile tools up -d pgadmin
-# http://localhost:5050 — connect host `school_pg`, db/user/pass from `.env`
-```
-
-Or use **pgAdmin Desktop** → `localhost:5432` with the same credentials.
+### OpenAPI / Swagger Documentation
+Interactive API documentation is generated at runtime via OpenAPI specs:
+- **Swagger UI:** `http://localhost:5000/swagger`
+- **Postman Collection:** [`docs/School Management API.postman_collection.json`](file:///home/ash/githubRepos/SchoolManagement(.net)/docs/School%20Management%20API.postman_collection.json)
 
 ---
 
-## 7. Business Rules & Documented Assumptions
+## ☁️ Deployment Guide
 
-1. **Enrollment Model:** Students belong to a specific **Class**; they can view published assignments for their enrolled class only.
-2. **Teacher Assignment Scoping:** Teachers can only create assignments for Class + Subject pairs to which they are assigned via `TeacherAssignment`.
-3. **Draft Visibility:** Draft assignments are strictly hidden from students; only `Published` assignments appear in student views.
-4. **Submission Uniqueness:** A student may submit only one response per assignment (enforced by a database unique index).
-5. **Submission Updates:** Students may update their submission prior to the deadline, provided the status is not already `Graded`.
-6. **Late Submissions:** Submissions past the deadline are rejected unless global `AllowLateSubmissions` setting is enabled by Admin (which marks the submission as `Late`).
-7. **Grading Bounds:** Marks must fall within `0..MaxMarks`. Submitting marks changes submission status to `Graded`.
-8. **JWT Storage:** Tokens are stored in `localStorage` for SPA simplicity.
-9. **Text Answers:** Submissions consist of formatted text responses (file attachment uploads are out of scope).
-10. **Deletion Protection:** Assignments with existing `Graded` submissions cannot be deleted.
+### Deploying Backend to Render (Blueprint Deployment)
 
----
+The repository includes a ready-to-use [`render.yaml`](file:///home/ash/githubRepos/SchoolManagement(.net)/render.yaml) blueprint specification:
 
-## 8. Known Limitations
-
-- **Text-Only Submissions:** File upload attachments are not included, adhering to brief scope.
-- **Single-Tenant Architecture:** Designed for a single school/institution instance.
-- **Persisted Notifications:** Notifications use DB storage and polling rather than WebSocket connections.
-
----
-
-## 9. Demo Credentials
-
-| Role        | Email                 | Password      | Scope & Permissions                                            |
-| ----------- | --------------------- | ------------- | -------------------------------------------------------------- |
-| **Admin**   | `admin@school.com`    | `Admin123!`   | Full administrative access across all modules                  |
-| **Teacher** | `teacher@school.com`  | `Teacher123!` | Manage assignments and grade submissions for assigned subjects |
-| **Student** | `student1@school.com` | `Student123!` | View enrolled assignments, submit responses, track feedback    |
-| **Student** | `student2@school.com` | `Student123!` | View enrolled assignments, submit responses, track feedback    |
-
-**Swagger:** http://localhost:5000/swagger · **App:** http://localhost:3000
-
----
-
-## 10. Submission Checklist (§5 Compliance)
-
-- [x] Mono-repository structure containing frontend and backend
-- [x] Single API host backend architecture (.NET 10 Web API)
-- [x] Next.js 16 frontend app initialized
-- [x] Environment configuration template (`.env.example`) provided
-- [x] Docker Compose setup for PostgreSQL instance
-- [x] Health check endpoint (`GET /api/Health`) operational
-- [x] EF Core migrations and initial seed data
-- [x] API-enforced Role-Based Access Control
-- [x] Admin, Teacher, and Student features implemented
-- [x] xUnit test suite for business rules and RBAC
-- [x] No real production secrets committed (demo JWT key documented in `.env.example`)
-- [x] DB backup file under `docs/db/seed-backup.sql`
-- [x] Dockerfile and Render Blueprint (`render.yaml`) for backend deployment
-- [x] Automated GitHub Actions CI/CD pipeline for Render deployment (`.github/workflows/deploy-backend.yml`)
-
----
-
-## 11. Deploying Backend to Render with CI/CD
-
-### Option A: Quick Blueprint Deployment (Recommended)
-1. Push your repository to GitHub.
-2. Sign in to [Render](https://render.com).
-3. Click **New +** -> **Blueprint**.
-4. Connect your GitHub repository. Render will automatically detect [`render.yaml`](file:///home/ash/githubRepos/SchoolManagement(.net)/render.yaml) and configure:
-   - Web Service: `.NET 10 API` (built via [`backend/Dockerfile`](file:///home/ash/githubRepos/SchoolManagement(.net)/backend/Dockerfile))
-   - Database: Managed PostgreSQL database (`school-management-db`) with automatic `DATABASE_URL` linking.
+1. Push your repository to **GitHub**.
+2. Sign in to your [Render Dashboard](https://dashboard.render.com/).
+3. Select **New +** → **Blueprint**.
+4. Connect this repository. Render automatically provisions:
+   - **Web Service:** `.NET 10 API` built via [`backend/Dockerfile`](file:///home/ash/githubRepos/SchoolManagement(.net)/backend/Dockerfile).
+   - **PostgreSQL Database:** Managed database instance linked via `DATABASE_URL`.
 5. Click **Apply**.
 
-### Option B: Manual Web Service Setup
-1. In Render Dashboard, click **New +** -> **Web Service**.
-2. Connect your repo and set:
-   - **Environment:** `Docker`
-   - **Dockerfile Path:** `./backend/Dockerfile`
-   - **Docker Context:** `.`
-   - **Health Check Path:** `/api/health`
-3. Add Environment Variables:
-   - `ASPNETCORE_ENVIRONMENT`: `Production`
-   - `DATABASE_URL`: Connection string from your Render PostgreSQL instance
-   - `Jwt__Key`: Random string of 32+ characters
-   - `Jwt__Issuer`: `SchoolManagementApp`
-   - `Jwt__Audience`: `SchoolManagementApp`
-   - `FRONTEND_ORIGIN`: URL of your deployed frontend (e.g., `https://your-app.onrender.com`)
+### Automated CI/CD (GitHub Actions)
 
-### Setting Up Automated CI/CD (GitHub Actions)
-1. Open your Web Service settings in **Render Dashboard**.
-2. Scroll to **Deploy Hook** and copy your unique Deploy Hook URL.
-3. In your **GitHub Repository**, go to **Settings** -> **Secrets and variables** -> **Actions**.
-4. Add a new secret:
-   - **Name:** `RENDER_DEPLOY_HOOK_URL`
-   - **Value:** Paste your Render Deploy Hook URL.
-5. Whenever changes are pushed to `main` or `master`, [`.github/workflows/deploy-backend.yml`](file:///home/ash/githubRepos/SchoolManagement(.net)/.github/workflows/deploy-backend.yml) will automatically run tests and trigger deployment on Render upon success.
+The repository includes two automated workflows:
+1. [`.github/workflows/ci.yml`](file:///home/ash/githubRepos/SchoolManagement(.net)/.github/workflows/ci.yml): Runs `dotnet test`, TypeScript checking, and Next.js linting on every push or pull request.
+2. [`.github/workflows/deploy-backend.yml`](file:///home/ash/githubRepos/SchoolManagement(.net)/.github/workflows/deploy-backend.yml): Automatically triggers Render deployment upon successful build on `main` or `master`.
 
+To enable automated deployment:
+1. Copy the **Deploy Hook URL** from your Render Web Service settings.
+2. In GitHub, go to **Settings** → **Secrets and variables** → **Actions**.
+3. Add a secret named `RENDER_DEPLOY_HOOK_URL` with your Render deploy hook URL.
+
+---
+
+## 📄 License
+
+This repository is licensed under the **MIT License**.
