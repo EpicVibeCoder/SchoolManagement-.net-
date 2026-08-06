@@ -10,176 +10,153 @@ import { ApiError, AssignmentDto, SubmissionDto, get, put } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 
 interface GradeDraft {
-  marks: string;
-  feedback: string;
+      marks: string;
+      feedback: string;
 }
 
 export default function TeacherAssignmentDetailPage() {
-  const params = useParams<{ id: string }>();
-  const router = useRouter();
-  const assignmentId = params.id;
+      const params = useParams<{ id: string }>();
+      const router = useRouter();
+      const assignmentId = params.id;
 
-  const [assignment, setAssignment] = useState<AssignmentDto | null>(null);
-  const [submissions, setSubmissions] = useState<SubmissionDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [drafts, setDrafts] = useState<Record<string, GradeDraft>>({});
-  const [savingId, setSavingId] = useState<string | null>(null);
-  const [rowError, setRowError] = useState<Record<string, string>>({});
+      const [assignment, setAssignment] = useState<AssignmentDto | null>(null);
+      const [submissions, setSubmissions] = useState<SubmissionDto[]>([]);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState<string | null>(null);
+      const [drafts, setDrafts] = useState<Record<string, GradeDraft>>({});
+      const [savingId, setSavingId] = useState<string | null>(null);
+      const [rowError, setRowError] = useState<Record<string, string>>({});
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [assignmentData, submissionsData] = await Promise.all([
-        get<AssignmentDto>(`/api/assignments/${assignmentId}`),
-        get<SubmissionDto[]>(`/api/assignments/${assignmentId}/submissions`),
-      ]);
-      setAssignment(assignmentData);
-      setSubmissions(submissionsData);
-      setDrafts((prev) => {
-        const next = { ...prev };
-        submissionsData.forEach((s) => {
-          if (!next[s.id]) {
-            next[s.id] = { marks: s.marks?.toString() ?? "", feedback: s.feedback ?? "" };
-          }
-        });
-        return next;
-      });
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to load assignment.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      const load = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                  const [assignmentData, submissionsData] = await Promise.all([get<AssignmentDto>(`/api/assignments/${assignmentId}`), get<SubmissionDto[]>(`/api/assignments/${assignmentId}/submissions`)]);
+                  setAssignment(assignmentData);
+                  setSubmissions(submissionsData);
+                  setDrafts((prev) => {
+                        const next = { ...prev };
+                        submissionsData.forEach((s) => {
+                              if (!next[s.id]) {
+                                    next[s.id] = { marks: s.marks?.toString() ?? "", feedback: s.feedback ?? "" };
+                              }
+                        });
+                        return next;
+                  });
+            } catch (err) {
+                  setError(err instanceof ApiError ? err.message : "Failed to load assignment.");
+            } finally {
+                  setLoading(false);
+            }
+      };
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assignmentId]);
+      useEffect(() => {
+            load();
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [assignmentId]);
 
-  const updateDraft = (id: string, field: keyof GradeDraft, value: string) => {
-    setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
-  };
+      const updateDraft = (id: string, field: keyof GradeDraft, value: string) => {
+            setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+      };
 
-  const submitGrade = async (submission: SubmissionDto) => {
-    const draft = drafts[submission.id];
-    const marksValue = Number(draft?.marks);
-    if (!draft?.marks || Number.isNaN(marksValue)) {
-      setRowError((prev) => ({ ...prev, [submission.id]: "Enter a valid mark." }));
-      return;
-    }
-    if (marksValue < 0 || marksValue > submission.maxMarks) {
-      setRowError((prev) => ({ ...prev, [submission.id]: `Marks must be between 0 and ${submission.maxMarks}.` }));
-      return;
-    }
-    setRowError((prev) => ({ ...prev, [submission.id]: "" }));
-    setSavingId(submission.id);
-    try {
-      await put(`/api/submissions/${submission.id}/grade`, {
-        marks: marksValue,
-        feedback: draft.feedback ?? "",
-        status: null,
-      });
-      await load();
-    } catch (err) {
-      setRowError((prev) => ({
-        ...prev,
-        [submission.id]: err instanceof ApiError ? err.message : "Failed to save grade.",
-      }));
-    } finally {
-      setSavingId(null);
-    }
-  };
+      const submitGrade = async (submission: SubmissionDto) => {
+            const draft = drafts[submission.id];
+            const marksValue = Number(draft?.marks);
+            if (!draft?.marks || Number.isNaN(marksValue)) {
+                  setRowError((prev) => ({ ...prev, [submission.id]: "Enter a valid mark." }));
+                  return;
+            }
+            if (marksValue < 0 || marksValue > submission.maxMarks) {
+                  setRowError((prev) => ({ ...prev, [submission.id]: `Marks must be between 0 and ${submission.maxMarks}.` }));
+                  return;
+            }
+            setRowError((prev) => ({ ...prev, [submission.id]: "" }));
+            setSavingId(submission.id);
+            try {
+                  await put(`/api/submissions/${submission.id}/grade`, {
+                        marks: marksValue,
+                        feedback: draft.feedback ?? "",
+                        status: null,
+                  });
+                  await load();
+            } catch (err) {
+                  setRowError((prev) => ({
+                        ...prev,
+                        [submission.id]: err instanceof ApiError ? err.message : "Failed to save grade.",
+                  }));
+            } finally {
+                  setSavingId(null);
+            }
+      };
 
-  if (loading) return <LoadingBlock label="Loading assignment…" />;
-  if (error) return <ErrorBlock message={error} />;
-  if (!assignment) return <ErrorBlock message="Assignment not found." />;
+      if (loading) return <LoadingBlock label="Loading assignment…" />;
+      if (error) return <ErrorBlock message={error} />;
+      if (!assignment) return <ErrorBlock message="Assignment not found." />;
 
-  return (
-    <div>
-      <button type="button" onClick={() => router.push("/teacher/assignments")} className="mb-4 text-sm text-[var(--color-ink-soft)] hover:underline">
-        ← Back to assignments
-      </button>
+      return (
+            <div>
+                  <button type="button" onClick={() => router.push("/teacher/assignments")} className="mb-4 text-sm text-[var(--color-ink-soft)] hover:underline">
+                        ← Back to assignments
+                  </button>
 
-      <PageHeader
-        title={assignment.title}
-        description={`${assignment.className} · ${assignment.subjectName} · Due ${formatDateTime(assignment.deadline)}`}
-        actions={<AssignmentStatusBadge status={assignment.status} />}
-      />
+                  <PageHeader title={assignment.title} description={`${assignment.className} · ${assignment.subjectName} · Due ${formatDateTime(assignment.deadline)}`} actions={<AssignmentStatusBadge status={assignment.status} />} />
 
-      <div className="sm-card mb-6 p-5">
-        <p className="text-sm text-[var(--color-ink-soft)]">Description</p>
-        <p className="mt-1 whitespace-pre-wrap text-sm">{assignment.description}</p>
-        <div className="mt-4 flex flex-wrap gap-6 text-sm">
-          <div>
-            <span className="text-[var(--color-ink-soft)]">Max marks: </span>
-            <span className="font-medium">{assignment.maxMarks}</span>
-          </div>
-          <div>
-            <span className="text-[var(--color-ink-soft)]">Submissions: </span>
-            <span className="font-medium">{assignment.submissionCount}</span>
-          </div>
-        </div>
-      </div>
+                  <div className="sm-card mb-6 p-5">
+                        <p className="text-sm text-[var(--color-ink-soft)]">Description</p>
+                        <p className="mt-1 whitespace-pre-wrap text-sm">{assignment.description}</p>
+                        <div className="mt-4 flex flex-wrap gap-6 text-sm">
+                              <div>
+                                    <span className="text-[var(--color-ink-soft)]">Max marks: </span>
+                                    <span className="font-medium">{assignment.maxMarks}</span>
+                              </div>
+                              <div>
+                                    <span className="text-[var(--color-ink-soft)]">Submissions: </span>
+                                    <span className="font-medium">{assignment.submissionCount}</span>
+                              </div>
+                        </div>
+                  </div>
 
-      <h2 className="mb-3 text-lg font-semibold">Submissions</h2>
-      <div className="space-y-3">
-        {submissions.map((s) => (
-          <div key={s.id} className="sm-card p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="font-medium text-[var(--color-primary-dark)]">{s.studentName}</p>
-                <p className="text-xs text-[var(--color-ink-soft)]">Submitted {formatDateTime(s.submittedAt)}</p>
-              </div>
-              <SubmissionStatusBadge status={s.status} />
+                  <h2 className="mb-3 text-lg font-semibold">Submissions</h2>
+                  <div className="space-y-3">
+                        {submissions.map((s) => (
+                              <div key={s.id} className="sm-card p-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                          <div>
+                                                <p className="font-medium text-[var(--color-primary-dark)]">{s.studentName}</p>
+                                                <p className="text-xs text-[var(--color-ink-soft)]">Submitted {formatDateTime(s.submittedAt)}</p>
+                                          </div>
+                                          <SubmissionStatusBadge status={s.status} />
+                                    </div>
+                                    <p className="mt-3 whitespace-pre-wrap rounded-md bg-[var(--color-bg-soft)] p-3 text-sm">{s.answer}</p>
+
+                                    <div className="mt-3 grid gap-3 sm:grid-cols-[8rem_1fr_auto] sm:items-end">
+                                          <div>
+                                                <label className="sm-label" htmlFor={`marks-${s.id}`}>
+                                                      Marks (/ {s.maxMarks})
+                                                </label>
+                                                <input id={`marks-${s.id}`} type="number" min={0} max={s.maxMarks} className="sm-input" value={drafts[s.id]?.marks ?? ""} onChange={(e) => updateDraft(s.id, "marks", e.target.value)} />
+                                          </div>
+                                          <div>
+                                                <label className="sm-label" htmlFor={`feedback-${s.id}`}>
+                                                      Feedback
+                                                </label>
+                                                <input id={`feedback-${s.id}`} className="sm-input" value={drafts[s.id]?.feedback ?? ""} onChange={(e) => updateDraft(s.id, "feedback", e.target.value)} />
+                                          </div>
+                                          <button type="button" className="sm-btn sm-btn-primary" disabled={savingId === s.id} onClick={() => submitGrade(s)}>
+                                                {savingId === s.id ? "Saving…" : "Save grade"}
+                                          </button>
+                                    </div>
+                                    {rowError[s.id] && <p className="mt-2 text-xs text-[var(--color-danger)]">{rowError[s.id]}</p>}
+                              </div>
+                        ))}
+                        {submissions.length === 0 && <div className="sm-card p-8 text-center text-sm text-[var(--color-ink-soft)]">No submissions yet.</div>}
+                  </div>
+
+                  <div className="mt-6">
+                        <Link href="/teacher/assignments" className="sm-btn sm-btn-secondary">
+                              Back to all assignments
+                        </Link>
+                  </div>
             </div>
-            <p className="mt-3 whitespace-pre-wrap rounded-md bg-[var(--color-bg-soft)] p-3 text-sm">{s.answer}</p>
-
-            <div className="mt-3 grid gap-3 sm:grid-cols-[8rem_1fr_auto] sm:items-end">
-              <div>
-                <label className="sm-label" htmlFor={`marks-${s.id}`}>Marks (/ {s.maxMarks})</label>
-                <input
-                  id={`marks-${s.id}`}
-                  type="number"
-                  min={0}
-                  max={s.maxMarks}
-                  className="sm-input"
-                  value={drafts[s.id]?.marks ?? ""}
-                  onChange={(e) => updateDraft(s.id, "marks", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="sm-label" htmlFor={`feedback-${s.id}`}>Feedback</label>
-                <input
-                  id={`feedback-${s.id}`}
-                  className="sm-input"
-                  value={drafts[s.id]?.feedback ?? ""}
-                  onChange={(e) => updateDraft(s.id, "feedback", e.target.value)}
-                />
-              </div>
-              <button
-                type="button"
-                className="sm-btn sm-btn-primary"
-                disabled={savingId === s.id}
-                onClick={() => submitGrade(s)}
-              >
-                {savingId === s.id ? "Saving…" : "Save grade"}
-              </button>
-            </div>
-            {rowError[s.id] && <p className="mt-2 text-xs text-[var(--color-danger)]">{rowError[s.id]}</p>}
-          </div>
-        ))}
-        {submissions.length === 0 && (
-          <div className="sm-card p-8 text-center text-sm text-[var(--color-ink-soft)]">No submissions yet.</div>
-        )}
-      </div>
-
-      <div className="mt-6">
-        <Link href="/teacher/assignments" className="sm-btn sm-btn-secondary">
-          Back to all assignments
-        </Link>
-      </div>
-    </div>
-  );
+      );
 }

@@ -24,3 +24,13 @@ yarn.lock
 # Misc
 coverage
 *.min.js
+
+# C# / .NET
+*.cs
+*.csx
+*.csproj
+*.fsproj
+*.vbproj
+*.sln
+**/bin/
+**/obj/

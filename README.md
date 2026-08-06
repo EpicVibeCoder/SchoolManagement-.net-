@@ -16,10 +16,12 @@ Built following a single Web API host architecture in **ASP.NET Core 10** paired
 ## 2. Main Features
 
 ### 🔑 Role-Based Access Control (RBAC)
+
 - **JWT Authentication:** Secure Token-based login with claims (`sub`, `email`, `role`).
 - **Backend-Enforced Authorization:** API endpoints independently verify JWT tokens and permissions before performing operations.
 
 ### 👑 Admin Management (§2 Admin)
+
 - **User Management:** Create, update, deactivate users, and assign roles.
 - **Academic Setup:** Full CRUD operations for Classes/Courses and Subjects.
 - **Teacher Allocation:** Map teachers to specific Class + Subject combinations (`TeacherAssignment`).
@@ -28,17 +30,20 @@ Built following a single Web API host architecture in **ASP.NET Core 10** paired
 - **Overview Dashboards:** Read-only visibility into all assignments and student submissions across the institution.
 
 ### 👩‍🏫 Teacher Workspace (§2 Teacher)
+
 - **Assignment CRUD:** Create, update, and delete assignments for assigned class and subject pairs.
 - **Draft & Publish:** Keep assignments as drafts or publish them to make them visible to students.
 - **Review & Grading:** View student submissions, award marks (`0..MaxMarks`), provide text feedback, and update submission status (`Submitted` → `Graded` / `Returned`).
 
 ### 🎓 Student Portal (§2 Student)
+
 - **Class Assignments View:** View published assignments relevant to enrolled classes.
 - **Submission Workflow:** Submit text-based responses prior to set deadlines.
 - **Submission Updates:** Edit submissions before deadline if not yet graded.
 - **Feedback & Marks:** Access earned marks, status changes, and teacher feedback.
 
 ### 🚀 Production Quality & Wow Tier (Planned)
+
 - **Docker Compose:** One-command docker orchestration (`postgres`, `api`, `web`).
 - **Pagination & Filtering:** Search, role/status/class filters, and deadline sorting across lists.
 - **In-App Notifications:** Persisted notifications for published assignments and graded submissions.
@@ -48,17 +53,17 @@ Built following a single Web API host architecture in **ASP.NET Core 10** paired
 
 ## 3. Technology Stack
 
-| Component | Technology / Framework | Version / Details |
-| --- | --- | --- |
-| **Backend API Host** | ASP.NET Core Web API | **.NET 10** (`net10.0` LTS) |
-| **Database** | PostgreSQL | **18.2-alpine** (via Docker Compose) |
-| **ORM** | Entity Framework Core | **10.x** (Npgsql EF Core Provider) |
-| **Validation & Logging** | FluentValidation, Serilog | Latest stable NuGet packages |
-| **API Documentation** | OpenAPI / Swagger UI | Integrated ASP.NET Core OpenAPI + Swagger UI |
-| **Frontend Framework** | Next.js | **16.x** (App Router, React 19, TypeScript) |
-| **Styling & UI** | Tailwind CSS | Modern, responsive CSS design |
-| **Forms & Schemas** | React Hook Form + Zod | Schema-based form validation |
-| **Automated Testing** | xUnit | Test project (`backend/Backend.Tests`) |
+| Component                | Technology / Framework    | Version / Details                            |
+| ------------------------ | ------------------------- | -------------------------------------------- |
+| **Backend API Host**     | ASP.NET Core Web API      | **.NET 10** (`net10.0` LTS)                  |
+| **Database**             | PostgreSQL                | **18.2-alpine** (via Docker Compose)         |
+| **ORM**                  | Entity Framework Core     | **10.x** (Npgsql EF Core Provider)           |
+| **Validation & Logging** | FluentValidation, Serilog | Latest stable NuGet packages                 |
+| **API Documentation**    | OpenAPI / Swagger UI      | Integrated ASP.NET Core OpenAPI + Swagger UI |
+| **Frontend Framework**   | Next.js                   | **16.x** (App Router, React 19, TypeScript)  |
+| **Styling & UI**         | Tailwind CSS              | Modern, responsive CSS design                |
+| **Forms & Schemas**      | React Hook Form + Zod     | Schema-based form validation                 |
+| **Automated Testing**    | xUnit                     | Test project (`backend/Backend.Tests`)       |
 
 ---
 
@@ -93,72 +98,88 @@ SchoolManagement(.net)/
 
 ## 5. Current Project Status
 
-| Phase | Description | Status |
-| --- | --- | --- |
-| **Phase 0** | Single API host scaffold, Next.js 16, Health, Docker Postgres | ✅ Completed |
-| **Phase 1** | Domain entities, EF migrations, seed data, SQL dump | ✅ Completed |
-| **Phase 2** | JWT auth, API RBAC, frontend login + role guards | ✅ Completed |
+| Phase       | Description                                                        | Status       |
+| ----------- | ------------------------------------------------------------------ | ------------ |
+| **Phase 0** | Single API host scaffold, Next.js 16, Health, Docker Postgres      | ✅ Completed |
+| **Phase 1** | Domain entities, EF migrations, seed data, SQL dump                | ✅ Completed |
+| **Phase 2** | JWT auth, API RBAC, frontend login + role guards                   | ✅ Completed |
 | **Phase 3** | Admin users, classes, subjects, assignments, enrollments, settings | ✅ Completed |
-| **Phase 4** | Teacher assignment CRUD + draft/publish | ✅ Completed |
-| **Phase 5** | Student view/submit/update | ✅ Completed |
-| **Phase 6** | Teacher grading + notifications | ✅ Completed |
-| **Phase 7** | FluentValidation, Serilog, CORS, filters, CI | ✅ Completed |
-| **Phase 8** | xUnit business-rule tests | ✅ Completed |
-| **Phase 9** | README, demo credentials, DB backup | ✅ Completed |
+| **Phase 4** | Teacher assignment CRUD + draft/publish                            | ✅ Completed |
+| **Phase 5** | Student view/submit/update                                         | ✅ Completed |
+| **Phase 6** | Teacher grading + notifications                                    | ✅ Completed |
+| **Phase 7** | FluentValidation, Serilog, CORS, filters, CI                       | ✅ Completed |
+| **Phase 8** | xUnit business-rule tests                                          | ✅ Completed |
+| **Phase 9** | README, demo credentials, DB backup                                | ✅ Completed |
 
 ---
 
 ## 6. Setup & Running Instructions
 
 ### Prerequisites
+
 - **.NET 10 SDK** (Verify with `dotnet --version`)
 - **Node.js Active LTS** (v20+ / v22+) & `npm`
 - **Docker & Docker Compose** (for PostgreSQL instance)
 
 ### Step 1: Environment Configuration
+
 Copy `.env.example` to `.env` in the root directory:
+
 ```bash
 cp .env.example .env
 ```
 
 ### Step 2: Database Setup (Docker)
+
 Start the PostgreSQL container:
+
 ```bash
 docker compose up -d postgres
 ```
 
 ### Step 3: Run Backend Web API
+
 Navigate to `backend/` and start the ASP.NET Core host:
+
 ```bash
 cd backend
 dotnet watch run
 ```
+
 - **API Base URL:** `http://localhost:5000` (or configured HTTPS port)
 - **Health Check Endpoint:** `http://localhost:5000/api/Health`
 - **Swagger Documentation:** `http://localhost:5000/swagger`
 
 ### Step 4: Run Frontend Web Application
+
 In a separate terminal window, navigate to `frontend/` and run the development server:
+
 ```bash
 cd frontend
 npm run dev
 ```
+
 - **Web Application URL:** `http://localhost:3000`
 
 ### Step 5: Database Migrations & Seed
+
 On API startup the host runs `Migrate` + seed automatically. You can also apply manually:
+
 ```bash
 cd backend
 dotnet ef database update
 ```
+
 SQL backup (after seed): `docs/db/seed-backup.sql`
 
 ### Step 6: Running Automated Tests
+
 ```bash
 dotnet test backend/Backend.Tests/Backend.Tests.csproj
 ```
 
 Optional pgAdmin (Docker profile `tools`):
+
 ```bash
 docker compose --profile tools up -d pgadmin
 # http://localhost:5050 — connect host `school_pg`, db/user/pass from `.env`
@@ -193,12 +214,12 @@ Or use **pgAdmin Desktop** → `localhost:5432` with the same credentials.
 
 ## 9. Demo Credentials
 
-| Role | Email | Password | Scope & Permissions |
-| --- | --- | --- | --- |
-| **Admin** | `admin@school.com` | `Admin123!` | Full administrative access across all modules |
-| **Teacher** | `teacher@school.com` | `Teacher123!` | Manage assignments and grade submissions for assigned subjects |
-| **Student** | `student1@school.com` | `Student123!` | View enrolled assignments, submit responses, track feedback |
-| **Student** | `student2@school.com` | `Student123!` | View enrolled assignments, submit responses, track feedback |
+| Role        | Email                 | Password      | Scope & Permissions                                            |
+| ----------- | --------------------- | ------------- | -------------------------------------------------------------- |
+| **Admin**   | `admin@school.com`    | `Admin123!`   | Full administrative access across all modules                  |
+| **Teacher** | `teacher@school.com`  | `Teacher123!` | Manage assignments and grade submissions for assigned subjects |
+| **Student** | `student1@school.com` | `Student123!` | View enrolled assignments, submit responses, track feedback    |
+| **Student** | `student2@school.com` | `Student123!` | View enrolled assignments, submit responses, track feedback    |
 
 **Swagger:** http://localhost:5000/swagger · **App:** http://localhost:3000
 
