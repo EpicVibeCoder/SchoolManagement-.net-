@@ -62,23 +62,24 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       return (
             <div className="flex min-h-screen flex-col">
-                  <header className="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 backdrop-blur">
+                  <header className="sticky top-0 z-30 border-b border-(--color-border) bg-surface/95 backdrop-blur">
                         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
                               <div className="flex items-center gap-6">
                                     <Link href={user ? "/" : "/login"} className="flex items-baseline gap-2">
-                                          <span className="text-lg font-semibold text-[var(--color-primary-dark)]" style={{ fontFamily: "var(--font-serif)" }}>
+                                          <span className="text-lg font-semibold text-(--color-primary-dark)" style={{ fontFamily: "var(--font-serif)" }}>
                                                 School Management
                                           </span>
                                     </Link>
                                     <nav className="hidden items-center gap-1 lg:flex">
                                           {links.map((link) => {
-                                                const active = pathname === link.href || (link.href !== "/" && pathname?.startsWith(link.href + "/"));
+                                                const isSectionRoot = link.href === "/admin" || link.href === "/teacher" || link.href === "/student";
+                                                const active = pathname === link.href || (!isSectionRoot && !!pathname?.startsWith(link.href + "/"));
                                                 return (
                                                       <Link
                                                             key={link.href}
                                                             href={link.href}
                                                             className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                                                                  active ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]" : "text-[var(--color-ink-soft)] hover:bg-[var(--color-bg-soft)] hover:text-[var(--color-primary-dark)]"
+                                                                  active ? "bg-primary text-(--color-on-primary)" : "text-(--color-ink-soft) hover:bg-(--color-bg-soft) hover:text-(--color-primary-dark)"
                                                             }`}
                                                       >
                                                             {link.label}
@@ -91,7 +92,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                               <div className="flex items-center gap-2 sm:gap-3">
                                     <Link
                                           href="/notifications"
-                                          className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-primary-dark)] transition hover:border-[var(--color-primary-soft)]"
+                                          className="relative flex h-9 w-9 items-center justify-center rounded-full border border-(--color-border) bg-(--color-surface-raised) text-(--color-primary-dark) transition hover:border-(--color-primary-soft)"
                                           aria-label="Notifications"
                                     >
                                           <BellIcon />
@@ -121,7 +122,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                               <nav className="border-t border-[var(--color-border)] px-4 py-2 lg:hidden">
                                     <div className="flex flex-col gap-1">
                                           {links.map((link) => {
-                                                const active = pathname === link.href || (link.href !== "/" && pathname?.startsWith(link.href + "/"));
+                                                const isSectionRoot = link.href === "/admin" || link.href === "/teacher" || link.href === "/student";
+
+                                                const active = pathname === link.href || (!isSectionRoot && !!pathname?.startsWith(link.href + "/"));
                                                 return (
                                                       <Link
                                                             key={link.href}
