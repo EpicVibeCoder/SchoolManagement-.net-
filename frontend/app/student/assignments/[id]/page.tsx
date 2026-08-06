@@ -76,36 +76,36 @@ export default function StudentAssignmentDetailPage() {
 
       return (
             <div>
-                  <button type="button" onClick={() => router.push("/student/assignments")} className="mb-4 text-sm text-[var(--color-ink-soft)] hover:underline">
+                  <button type="button" onClick={() => router.push("/student/assignments")} className="mb-4 text-sm text-(--color-ink-soft) hover:underline">
                         ← Back to assignments
                   </button>
 
                   <PageHeader title={assignment.title} description={`${assignment.className} · ${assignment.subjectName} · Due ${formatDateTime(assignment.deadline)}`} actions={<AssignmentStatusBadge status={assignment.status} />} />
 
                   <div className="sm-card mb-6 p-5">
-                        <p className="text-sm text-[var(--color-ink-soft)]">Description</p>
+                        <p className="text-sm text-(--color-ink-soft)">Description</p>
                         <p className="mt-1 whitespace-pre-wrap text-sm">{assignment.description}</p>
                         <div className="mt-4 flex flex-wrap gap-6 text-sm">
                               <div>
-                                    <span className="text-[var(--color-ink-soft)]">Max marks: </span>
+                                    <span className="text-(--color-ink-soft)">Max marks: </span>
                                     <span className="font-medium">{assignment.maxMarks}</span>
                               </div>
-                              {isPastDeadline && <div className="text-[var(--color-danger)]">Deadline has passed.</div>}
+                              {isPastDeadline && <div className="text-(--color-danger)">Deadline has passed.</div>}
                         </div>
                   </div>
 
                   {isGraded && submission && (
                         <div className="sm-card mb-6 p-5">
                               <div className="flex items-center justify-between">
-                                    <h2 className="text-base font-semibold text-[var(--color-primary-dark)]">Your grade</h2>
+                                    <h2 className="text-base font-semibold text-(--color-primary-dark)">Your grade</h2>
                                     <SubmissionStatusBadge status={submission.status} />
                               </div>
                               <p className="mt-2 text-2xl font-semibold" style={{ fontFamily: "var(--font-serif)" }}>
-                                    {submission.marks} <span className="text-sm font-normal text-[var(--color-ink-soft)]">/ {submission.maxMarks}</span>
+                                    {submission.marks} <span className="text-sm font-normal text-(--color-ink-soft)">/ {submission.maxMarks}</span>
                               </p>
                               {submission.feedback && (
                                     <div className="mt-2">
-                                          <p className="text-xs uppercase tracking-wide text-[var(--color-ink-soft)]">Feedback</p>
+                                          <p className="text-xs uppercase tracking-wide text-(--color-ink-soft)">Feedback</p>
                                           <p className="mt-1 whitespace-pre-wrap text-sm">{submission.feedback}</p>
                                     </div>
                               )}
@@ -129,7 +129,7 @@ export default function StudentAssignmentDetailPage() {
                               </button>
                         </div>
 
-                        {submission && <p className="mt-2 text-xs text-[var(--color-ink-soft)]">Last submitted {formatDateTime(submission.submittedAt)}</p>}
+                        {submission && <p className="mt-2 text-xs text-(--color-ink-soft)">Last submitted {formatDateTime(submission.submittedAt)}</p>}
                   </div>
             </div>
       );

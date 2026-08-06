@@ -120,7 +120,7 @@ export default function TeacherAssignmentsPage() {
                                                       </option>
                                                 ))}
                                           </select>
-                                          {errors.teacherId && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.teacherId.message}</p>}
+                                          {errors.teacherId && <p className="mt-1 text-xs text-(--color-danger)">{errors.teacherId.message}</p>}
                                     </div>
                                     <div>
                                           <label className="sm-label" htmlFor="classId">
@@ -134,7 +134,7 @@ export default function TeacherAssignmentsPage() {
                                                       </option>
                                                 ))}
                                           </select>
-                                          {errors.classId && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.classId.message}</p>}
+                                          {errors.classId && <p className="mt-1 text-xs text-(--color-danger)">{errors.classId.message}</p>}
                                     </div>
                                     <div>
                                           <label className="sm-label" htmlFor="subjectId">
@@ -148,7 +148,7 @@ export default function TeacherAssignmentsPage() {
                                                       </option>
                                                 ))}
                                           </select>
-                                          {errors.subjectId && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.subjectId.message}</p>}
+                                          {errors.subjectId && <p className="mt-1 text-xs text-(--color-danger)">{errors.subjectId.message}</p>}
                                     </div>
                                     <button type="submit" className="sm-btn sm-btn-primary w-full" disabled={submitting}>
                                           {submitting ? "Assigning…" : "Assign teacher"}
@@ -174,7 +174,7 @@ export default function TeacherAssignmentsPage() {
                                                 <tbody>
                                                       {assignments.map((a) => (
                                                             <tr key={a.id}>
-                                                                  <td className="font-medium text-[var(--color-primary-dark)]">{a.teacherName}</td>
+                                                                  <td className="font-medium text-(--color-primary-dark)">{a.teacherName}</td>
                                                                   <td>{a.className}</td>
                                                                   <td>{a.subjectName}</td>
                                                                   <td>
@@ -188,7 +188,7 @@ export default function TeacherAssignmentsPage() {
                                                       ))}
                                                       {assignments.length === 0 && (
                                                             <tr>
-                                                                  <td colSpan={4} className="text-center text-[var(--color-ink-soft)]">
+                                                                  <td colSpan={4} className="text-center text-(--color-ink-soft)">
                                                                         No teacher assignments yet.
                                                                   </td>
                                                             </tr>

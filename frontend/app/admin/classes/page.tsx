@@ -168,20 +168,20 @@ export default function AdminClassesPage() {
                                                 Name
                                           </label>
                                           <input id="name" className="sm-input" placeholder="Grade 10 A" {...register("name")} />
-                                          {errors.name && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.name.message}</p>}
+                                          {errors.name && <p className="mt-1 text-xs text-(--color-danger)">{errors.name.message}</p>}
                                     </div>
                                     <div>
                                           <label className="sm-label" htmlFor="code">
                                                 Code
                                           </label>
                                           <input id="code" className="sm-input" placeholder="G10A" {...register("code")} />
-                                          {errors.code && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.code.message}</p>}
+                                          {errors.code && <p className="mt-1 text-xs text-(--color-danger)">{errors.code.message}</p>}
                                     </div>
                                     <div>
                                           <label className="sm-label">Academic year</label>
                                           <div className="grid grid-cols-2 gap-2 mt-1">
                                                 <div>
-                                                      <label className="text-xs text-[var(--color-ink-soft)] font-medium block mb-1" htmlFor="startYear">
+                                                      <label className="text-xs text-(--color-ink-soft) font-medium block mb-1" htmlFor="startYear">
                                                             Start Year
                                                       </label>
                                                       <select id="startYear" className="sm-input" {...register("startYear")}>
@@ -191,10 +191,10 @@ export default function AdminClassesPage() {
                                                                   </option>
                                                             ))}
                                                       </select>
-                                                      {errors.startYear && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.startYear.message}</p>}
+                                                      {errors.startYear && <p className="mt-1 text-xs text-(--color-danger)">{errors.startYear.message}</p>}
                                                 </div>
                                                 <div>
-                                                      <label className="text-xs text-[var(--color-ink-soft)] font-medium block mb-1" htmlFor="endYear">
+                                                      <label className="text-xs text-(--color-ink-soft) font-medium block mb-1" htmlFor="endYear">
                                                             End Year
                                                       </label>
                                                       <select id="endYear" className="sm-input" {...register("endYear")}>
@@ -204,7 +204,7 @@ export default function AdminClassesPage() {
                                                                   </option>
                                                             ))}
                                                       </select>
-                                                      {errors.endYear && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.endYear.message}</p>}
+                                                      {errors.endYear && <p className="mt-1 text-xs text-(--color-danger)">{errors.endYear.message}</p>}
                                                 </div>
                                           </div>
                                     </div>
@@ -249,7 +249,7 @@ export default function AdminClassesPage() {
                                                 <tbody>
                                                       {filteredClasses.map((klass) => (
                                                             <tr key={klass.id}>
-                                                                  <td className="font-medium text-[var(--color-primary-dark)]">{klass.name}</td>
+                                                                  <td className="font-medium text-(--color-primary-dark)">{klass.name}</td>
                                                                   <td>{klass.code}</td>
                                                                   <td>{klass.academicYear}</td>
                                                                   <td>
@@ -266,14 +266,14 @@ export default function AdminClassesPage() {
                                                       ))}
                                                       {classes.length === 0 && (
                                                             <tr>
-                                                                  <td colSpan={4} className="text-center text-[var(--color-ink-soft)]">
+                                                                  <td colSpan={4} className="text-center text-(--color-ink-soft)">
                                                                         No classes yet.
                                                                   </td>
                                                             </tr>
                                                       )}
                                                       {classes.length > 0 && filteredClasses.length === 0 && (
                                                             <tr>
-                                                                  <td colSpan={4} className="text-center text-[var(--color-ink-soft)]">
+                                                                  <td colSpan={4} className="text-center text-(--color-ink-soft)">
                                                                         No classes match your search.
                                                                   </td>
                                                             </tr>

@@ -49,11 +49,11 @@ export default function AdminDashboardPage() {
                   {stats && (
                         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
                               {STAT_CARDS.map((card) => (
-                                    <Link key={card.key} href={card.href} className="sm-card block p-4 transition hover:border-[var(--color-primary-soft)]">
-                                          <p className="text-3xl font-semibold text-[var(--color-primary-dark)]" style={{ fontFamily: "var(--font-serif)" }}>
+                                    <Link key={card.key} href={card.href} className="sm-card block p-4 transition hover:border-(--color-primary-soft)">
+                                          <p className="text-3xl font-semibold text-(--color-primary-dark)" style={{ fontFamily: "var(--font-serif)" }}>
                                                 {stats[card.key]}
                                           </p>
-                                          <p className="mt-1 text-xs font-medium uppercase tracking-wide text-[var(--color-ink-soft)]">{card.label}</p>
+                                          <p className="mt-1 text-xs font-medium uppercase tracking-wide text-(--color-ink-soft)">{card.label}</p>
                                     </Link>
                               ))}
                         </div>

@@ -113,7 +113,7 @@ export default function EnrollmentsPage() {
                                                       </option>
                                                 ))}
                                           </select>
-                                          {errors.studentId && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.studentId.message}</p>}
+                                          {errors.studentId && <p className="mt-1 text-xs text-(--color-danger)">{errors.studentId.message}</p>}
                                     </div>
                                     <div>
                                           <label className="sm-label" htmlFor="classId">
@@ -127,7 +127,7 @@ export default function EnrollmentsPage() {
                                                       </option>
                                                 ))}
                                           </select>
-                                          {errors.classId && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.classId.message}</p>}
+                                          {errors.classId && <p className="mt-1 text-xs text-(--color-danger)">{errors.classId.message}</p>}
                                     </div>
                                     <button type="submit" className="sm-btn sm-btn-primary w-full" disabled={submitting}>
                                           {submitting ? "Enrolling…" : "Enroll student"}
@@ -164,7 +164,7 @@ export default function EnrollmentsPage() {
                                                 <tbody>
                                                       {enrollments.map((enrollment) => (
                                                             <tr key={enrollment.id}>
-                                                                  <td className="font-medium text-[var(--color-primary-dark)]">{enrollment.studentName}</td>
+                                                                  <td className="font-medium text-(--color-primary-dark)">{enrollment.studentName}</td>
                                                                   <td>{enrollment.className}</td>
                                                                   <td>{formatDate(enrollment.enrolledAt)}</td>
                                                                   <td>
@@ -178,7 +178,7 @@ export default function EnrollmentsPage() {
                                                       ))}
                                                       {enrollments.length === 0 && (
                                                             <tr>
-                                                                  <td colSpan={4} className="text-center text-[var(--color-ink-soft)]">
+                                                                  <td colSpan={4} className="text-center text-(--color-ink-soft)">
                                                                         No enrollments yet.
                                                                   </td>
                                                             </tr>

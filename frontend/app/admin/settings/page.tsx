@@ -58,8 +58,8 @@ export default function AdminSettingsPage() {
                         <div className="sm-card max-w-xl p-6">
                               <div className="flex items-start justify-between gap-4">
                                     <div>
-                                          <h2 className="text-base font-semibold text-[var(--color-primary-dark)]">Allow late submissions</h2>
-                                          <p className="mt-1 text-sm text-[var(--color-ink-soft)]">When enabled, students can submit assignment answers after the deadline has passed.</p>
+                                          <h2 className="text-base font-semibold text-(--color-primary-dark)">Allow late submissions</h2>
+                                          <p className="mt-1 text-sm text-(--color-ink-soft)">When enabled, students can submit assignment answers after the deadline has passed.</p>
                                     </div>
                                     <button
                                           type="button"
@@ -67,24 +67,24 @@ export default function AdminSettingsPage() {
                                           aria-checked={isAllowed}
                                           onClick={toggleAllowLate}
                                           disabled={saving}
-                                          className={`relative h-7 w-12 shrink-0 rounded-full transition ${isAllowed ? "bg-[var(--color-primary)]" : "bg-[var(--color-border-strong)]"} disabled:opacity-60`}
+                                          className={`relative h-7 w-12 shrink-0 rounded-full transition ${isAllowed ? "bg-(--color-primary)" : "bg-(--color-border-strong)"} disabled:opacity-60`}
                                     >
                                           <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${isAllowed ? "left-6" : "left-1"}`} />
                                     </button>
                               </div>
 
-                              <div className="mt-6 border-t border-[var(--color-border)] pt-4">
-                                    <p className="text-xs uppercase tracking-wide text-[var(--color-ink-soft)]">Other settings</p>
+                              <div className="mt-6 border-t border-(--color-border) pt-4">
+                                    <p className="text-xs uppercase tracking-wide text-(--color-ink-soft)">Other settings</p>
                                     <div className="mt-2 space-y-1">
                                           {settings
                                                 .filter((s) => s.key !== ALLOW_LATE_KEY)
                                                 .map((s) => (
                                                       <div key={s.key} className="flex justify-between text-sm">
-                                                            <span className="text-[var(--color-ink-soft)]">{s.key}</span>
+                                                            <span className="text-(--color-ink-soft)">{s.key}</span>
                                                             <span className="font-medium">{s.value}</span>
                                                       </div>
                                                 ))}
-                                          {settings.length <= 1 && <p className="text-sm text-[var(--color-ink-soft)]">No other settings configured.</p>}
+                                          {settings.length <= 1 && <p className="text-sm text-(--color-ink-soft)">No other settings configured.</p>}
                                     </div>
                               </div>
                         </div>

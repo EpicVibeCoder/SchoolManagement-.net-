@@ -55,22 +55,22 @@ export default function StudentDashboardPage() {
                   {stats && (
                         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                               <div className="sm-card p-4">
-                                    <p className="text-3xl font-semibold text-[var(--color-primary-dark)]" style={{ fontFamily: "var(--font-serif)" }}>
+                                    <p className="text-3xl font-semibold text-(--color-primary-dark)" style={{ fontFamily: "var(--font-serif)" }}>
                                           {stats.assignments}
                                     </p>
-                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-[var(--color-ink-soft)]">Assignments</p>
+                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-(--color-ink-soft)">Assignments</p>
                               </div>
                               <div className="sm-card p-4">
-                                    <p className="text-3xl font-semibold text-[var(--color-primary-dark)]" style={{ fontFamily: "var(--font-serif)" }}>
+                                    <p className="text-3xl font-semibold text-(--color-primary-dark)" style={{ fontFamily: "var(--font-serif)" }}>
                                           {mySubmissions.length}
                                     </p>
-                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-[var(--color-ink-soft)]">My Submissions</p>
+                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-(--color-ink-soft)">My Submissions</p>
                               </div>
                               <div className="sm-card p-4">
-                                    <p className="text-3xl font-semibold text-[var(--color-primary-dark)]" style={{ fontFamily: "var(--font-serif)" }}>
+                                    <p className="text-3xl font-semibold text-(--color-primary-dark)" style={{ fontFamily: "var(--font-serif)" }}>
                                           {stats.dueSoon}
                                     </p>
-                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-[var(--color-ink-soft)]">Due Soon</p>
+                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-(--color-ink-soft)">Due Soon</p>
                               </div>
                         </div>
                   )}
@@ -91,7 +91,7 @@ export default function StudentDashboardPage() {
                                                 {assignments.map((a) => (
                                                       <tr key={a.id}>
                                                             <td>
-                                                                  <Link href={`/student/assignments/${a.id}`} className="font-medium text-[var(--color-primary-dark)] hover:underline">
+                                                                  <Link href={`/student/assignments/${a.id}`} className="font-medium text-(--color-primary-dark) hover:underline">
                                                                         {a.title}
                                                                   </Link>
                                                             </td>
@@ -103,7 +103,7 @@ export default function StudentDashboardPage() {
                                                 ))}
                                                 {assignments.length === 0 && !loading && (
                                                       <tr>
-                                                            <td colSpan={3} className="text-center text-[var(--color-ink-soft)]">
+                                                            <td colSpan={3} className="text-center text-(--color-ink-soft)">
                                                                   No assignments yet.
                                                             </td>
                                                       </tr>
@@ -127,7 +127,7 @@ export default function StudentDashboardPage() {
                                           <tbody>
                                                 {mySubmissions.map((s) => (
                                                       <tr key={s.id}>
-                                                            <td className="font-medium text-[var(--color-primary-dark)]">{s.assignmentTitle}</td>
+                                                            <td className="font-medium text-(--color-primary-dark)">{s.assignmentTitle}</td>
                                                             <td>
                                                                   <SubmissionStatusBadge status={s.status} />
                                                             </td>
@@ -136,7 +136,7 @@ export default function StudentDashboardPage() {
                                                 ))}
                                                 {mySubmissions.length === 0 && !loading && (
                                                       <tr>
-                                                            <td colSpan={3} className="text-center text-[var(--color-ink-soft)]">
+                                                            <td colSpan={3} className="text-center text-(--color-ink-soft)">
                                                                   No submissions yet.
                                                             </td>
                                                       </tr>

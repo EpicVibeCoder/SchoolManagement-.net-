@@ -106,14 +106,14 @@ export default function AdminSubjectsPage() {
                                                 Name
                                           </label>
                                           <input id="name" className="sm-input" placeholder="Mathematics" {...register("name")} />
-                                          {errors.name && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.name.message}</p>}
+                                          {errors.name && <p className="mt-1 text-xs text-(--color-danger)">{errors.name.message}</p>}
                                     </div>
                                     <div>
                                           <label className="sm-label" htmlFor="code">
                                                 Code
                                           </label>
                                           <input id="code" className="sm-input" placeholder="MATH" {...register("code")} />
-                                          {errors.code && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.code.message}</p>}
+                                          {errors.code && <p className="mt-1 text-xs text-(--color-danger)">{errors.code.message}</p>}
                                     </div>
                                     <div className="flex gap-2">
                                           <button type="submit" className="sm-btn sm-btn-primary flex-1" disabled={submitting}>
@@ -145,7 +145,7 @@ export default function AdminSubjectsPage() {
                                                 <tbody>
                                                       {subjects.map((subject) => (
                                                             <tr key={subject.id}>
-                                                                  <td className="font-medium text-[var(--color-primary-dark)]">{subject.name}</td>
+                                                                  <td className="font-medium text-(--color-primary-dark)">{subject.name}</td>
                                                                   <td>{subject.code}</td>
                                                                   <td>
                                                                         <div className="flex justify-end gap-2">
@@ -161,7 +161,7 @@ export default function AdminSubjectsPage() {
                                                       ))}
                                                       {subjects.length === 0 && (
                                                             <tr>
-                                                                  <td colSpan={3} className="text-center text-[var(--color-ink-soft)]">
+                                                                  <td colSpan={3} className="text-center text-(--color-ink-soft)">
                                                                         No subjects yet.
                                                                   </td>
                                                             </tr>

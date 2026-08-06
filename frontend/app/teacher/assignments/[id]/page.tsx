@@ -95,22 +95,22 @@ export default function TeacherAssignmentDetailPage() {
 
       return (
             <div>
-                  <button type="button" onClick={() => router.push("/teacher/assignments")} className="mb-4 text-sm text-[var(--color-ink-soft)] hover:underline">
+                  <button type="button" onClick={() => router.push("/teacher/assignments")} className="mb-4 text-sm text-(--color-ink-soft) hover:underline">
                         ← Back to assignments
                   </button>
 
                   <PageHeader title={assignment.title} description={`${assignment.className} · ${assignment.subjectName} · Due ${formatDateTime(assignment.deadline)}`} actions={<AssignmentStatusBadge status={assignment.status} />} />
 
                   <div className="sm-card mb-6 p-5">
-                        <p className="text-sm text-[var(--color-ink-soft)]">Description</p>
+                        <p className="text-sm text-(--color-ink-soft)">Description</p>
                         <p className="mt-1 whitespace-pre-wrap text-sm">{assignment.description}</p>
                         <div className="mt-4 flex flex-wrap gap-6 text-sm">
                               <div>
-                                    <span className="text-[var(--color-ink-soft)]">Max marks: </span>
+                                    <span className="text-(--color-ink-soft)">Max marks: </span>
                                     <span className="font-medium">{assignment.maxMarks}</span>
                               </div>
                               <div>
-                                    <span className="text-[var(--color-ink-soft)]">Submissions: </span>
+                                    <span className="text-(--color-ink-soft)">Submissions: </span>
                                     <span className="font-medium">{assignment.submissionCount}</span>
                               </div>
                         </div>
@@ -122,12 +122,12 @@ export default function TeacherAssignmentDetailPage() {
                               <div key={s.id} className="sm-card p-4">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                           <div>
-                                                <p className="font-medium text-[var(--color-primary-dark)]">{s.studentName}</p>
-                                                <p className="text-xs text-[var(--color-ink-soft)]">Submitted {formatDateTime(s.submittedAt)}</p>
+                                                <p className="font-medium text-(--color-primary-dark)">{s.studentName}</p>
+                                                <p className="text-xs text-(--color-ink-soft)">Submitted {formatDateTime(s.submittedAt)}</p>
                                           </div>
                                           <SubmissionStatusBadge status={s.status} />
                                     </div>
-                                    <p className="mt-3 whitespace-pre-wrap rounded-md bg-[var(--color-bg-soft)] p-3 text-sm">{s.answer}</p>
+                                    <p className="mt-3 whitespace-pre-wrap rounded-md bg-(--color-bg-soft) p-3 text-sm">{s.answer}</p>
 
                                     <div className="mt-3 grid gap-3 sm:grid-cols-[8rem_1fr_auto] sm:items-end">
                                           <div>
@@ -146,10 +146,10 @@ export default function TeacherAssignmentDetailPage() {
                                                 {savingId === s.id ? "Saving…" : "Save grade"}
                                           </button>
                                     </div>
-                                    {rowError[s.id] && <p className="mt-2 text-xs text-[var(--color-danger)]">{rowError[s.id]}</p>}
+                                    {rowError[s.id] && <p className="mt-2 text-xs text-(--color-danger)">{rowError[s.id]}</p>}
                               </div>
                         ))}
-                        {submissions.length === 0 && <div className="sm-card p-8 text-center text-sm text-[var(--color-ink-soft)]">No submissions yet.</div>}
+                        {submissions.length === 0 && <div className="sm-card p-8 text-center text-sm text-(--color-ink-soft)">No submissions yet.</div>}
                   </div>
 
                   <div className="mt-6">

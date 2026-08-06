@@ -139,14 +139,14 @@ export default function TeacherAssignmentsPage() {
                                                 Title
                                           </label>
                                           <input id="title" className="sm-input" {...register("title")} />
-                                          {errors.title && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.title.message}</p>}
+                                          {errors.title && <p className="mt-1 text-xs text-(--color-danger)">{errors.title.message}</p>}
                                     </div>
                                     <div className="sm:col-span-2">
                                           <label className="sm-label" htmlFor="description">
                                                 Description
                                           </label>
                                           <textarea id="description" rows={3} className="sm-input" {...register("description")} />
-                                          {errors.description && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.description.message}</p>}
+                                          {errors.description && <p className="mt-1 text-xs text-(--color-danger)">{errors.description.message}</p>}
                                     </div>
                                     <div>
                                           <label className="sm-label" htmlFor="classId">
@@ -160,7 +160,7 @@ export default function TeacherAssignmentsPage() {
                                                       </option>
                                                 ))}
                                           </select>
-                                          {errors.classId && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.classId.message}</p>}
+                                          {errors.classId && <p className="mt-1 text-xs text-(--color-danger)">{errors.classId.message}</p>}
                                     </div>
                                     <div>
                                           <label className="sm-label" htmlFor="subjectId">
@@ -174,21 +174,21 @@ export default function TeacherAssignmentsPage() {
                                                       </option>
                                                 ))}
                                           </select>
-                                          {errors.subjectId && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.subjectId.message}</p>}
+                                          {errors.subjectId && <p className="mt-1 text-xs text-(--color-danger)">{errors.subjectId.message}</p>}
                                     </div>
                                     <div>
                                           <label className="sm-label" htmlFor="deadline">
                                                 Deadline
                                           </label>
                                           <input id="deadline" type="datetime-local" className="sm-input" {...register("deadline")} />
-                                          {errors.deadline && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.deadline.message}</p>}
+                                          {errors.deadline && <p className="mt-1 text-xs text-(--color-danger)">{errors.deadline.message}</p>}
                                     </div>
                                     <div>
                                           <label className="sm-label" htmlFor="maxMarks">
                                                 Max marks
                                           </label>
                                           <input id="maxMarks" type="number" className="sm-input" {...register("maxMarks")} />
-                                          {errors.maxMarks && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.maxMarks.message}</p>}
+                                          {errors.maxMarks && <p className="mt-1 text-xs text-(--color-danger)">{errors.maxMarks.message}</p>}
                                     </div>
                                     <div className="sm:col-span-2">
                                           <button type="submit" className="sm-btn sm-btn-primary" disabled={submitting}>
@@ -219,7 +219,7 @@ export default function TeacherAssignmentsPage() {
                                           {assignments.map((a) => (
                                                 <tr key={a.id}>
                                                       <td>
-                                                            <Link href={`/teacher/assignments/${a.id}`} className="font-medium text-[var(--color-primary-dark)] hover:underline">
+                                                            <Link href={`/teacher/assignments/${a.id}`} className="font-medium text-(--color-primary-dark) hover:underline">
                                                                   {a.title}
                                                             </Link>
                                                       </td>
@@ -245,7 +245,7 @@ export default function TeacherAssignmentsPage() {
                                           ))}
                                           {assignments.length === 0 && (
                                                 <tr>
-                                                      <td colSpan={6} className="text-center text-[var(--color-ink-soft)]">
+                                                      <td colSpan={6} className="text-center text-(--color-ink-soft)">
                                                             No assignments yet. Create your first one above.
                                                       </td>
                                                 </tr>

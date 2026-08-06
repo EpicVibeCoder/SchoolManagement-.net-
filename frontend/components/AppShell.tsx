@@ -97,29 +97,29 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                     >
                                           <BellIcon />
                                           {unreadCount > 0 && (
-                                                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-danger)] px-1 text-[10px] font-bold text-white">
+                                                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-(--color-danger) px-1 text-[10px] font-bold text-white">
                                                       {unreadCount > 9 ? "9+" : unreadCount}
                                                 </span>
                                           )}
                                     </Link>
 
                                     <div className="hidden text-right sm:block">
-                                          <p className="text-sm font-semibold leading-tight text-[var(--color-primary-dark)]">{user?.fullName}</p>
-                                          <p className="text-xs leading-tight text-[var(--color-ink-soft)]">{user ? userRoleLabels[user.role] : ""}</p>
+                                          <p className="text-sm font-semibold leading-tight text-(--color-primary-dark)">{user?.fullName}</p>
+                                          <p className="text-xs leading-tight text-(--color-ink-soft)">{user ? userRoleLabels[user.role] : ""}</p>
                                     </div>
 
                                     <button type="button" onClick={handleLogout} className="sm-btn sm-btn-secondary hidden sm:inline-flex">
                                           Log out
                                     </button>
 
-                                    <button type="button" className="flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-border)] lg:hidden" onClick={() => setMenuOpen((v) => !v)} aria-label="Toggle menu">
+                                    <button type="button" className="flex h-9 w-9 items-center justify-center rounded-md border border-(--color-border) lg:hidden" onClick={() => setMenuOpen((v) => !v)} aria-label="Toggle menu">
                                           <MenuIcon />
                                     </button>
                               </div>
                         </div>
 
                         {menuOpen && (
-                              <nav className="border-t border-[var(--color-border)] px-4 py-2 lg:hidden">
+                              <nav className="border-t border-(--color-border) px-4 py-2 lg:hidden">
                                     <div className="flex flex-col gap-1">
                                           {links.map((link) => {
                                                 const isSectionRoot = link.href === "/admin" || link.href === "/teacher" || link.href === "/student";
@@ -131,14 +131,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                                             href={link.href}
                                                             onClick={() => setMenuOpen(false)}
                                                             className={`rounded-md px-3 py-2 text-sm font-medium transition ${
-                                                                  active ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]" : "text-[var(--color-ink-soft)] hover:bg-[var(--color-bg-soft)]"
+                                                                  active ? "bg-primary text-(--color-on-primary)" : "text-(--color-ink-soft) hover:bg-(--color-bg-soft)"
                                                             }`}
                                                       >
                                                             {link.label}
                                                       </Link>
                                                 );
                                           })}
-                                          <button type="button" onClick={handleLogout} className="mt-1 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger-bg)]">
+                                          <button type="button" onClick={handleLogout} className="mt-1 rounded-md px-3 py-2 text-left text-sm font-medium text-(--color-danger) hover:bg-(--color-danger-bg)">
                                                 Log out
                                           </button>
                                     </div>

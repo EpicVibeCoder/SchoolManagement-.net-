@@ -58,28 +58,28 @@ export default function TeacherDashboardPage() {
                   {stats && (
                         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                               <div className="sm-card p-4">
-                                    <p className="text-3xl font-semibold text-[var(--color-primary-dark)]" style={{ fontFamily: "var(--font-serif)" }}>
+                                    <p className="text-3xl font-semibold text-(--color-primary-dark)" style={{ fontFamily: "var(--font-serif)" }}>
                                           {stats.assignments}
                                     </p>
-                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-[var(--color-ink-soft)]">Assignments</p>
+                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-(--color-ink-soft)">Assignments</p>
                               </div>
                               <div className="sm-card p-4">
-                                    <p className="text-3xl font-semibold text-[var(--color-primary-dark)]" style={{ fontFamily: "var(--font-serif)" }}>
+                                    <p className="text-3xl font-semibold text-(--color-primary-dark)" style={{ fontFamily: "var(--font-serif)" }}>
                                           {stats.submissions}
                                     </p>
-                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-[var(--color-ink-soft)]">Submissions</p>
+                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-(--color-ink-soft)">Submissions</p>
                               </div>
                               <div className="sm-card p-4">
-                                    <p className="text-3xl font-semibold text-[var(--color-primary-dark)]" style={{ fontFamily: "var(--font-serif)" }}>
+                                    <p className="text-3xl font-semibold text-(--color-primary-dark)" style={{ fontFamily: "var(--font-serif)" }}>
                                           {stats.pendingGrading}
                                     </p>
-                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-[var(--color-ink-soft)]">Pending Grading</p>
+                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-(--color-ink-soft)">Pending Grading</p>
                               </div>
                               <div className="sm-card p-4">
-                                    <p className="text-3xl font-semibold text-[var(--color-primary-dark)]" style={{ fontFamily: "var(--font-serif)" }}>
+                                    <p className="text-3xl font-semibold text-(--color-primary-dark)" style={{ fontFamily: "var(--font-serif)" }}>
                                           {stats.dueSoon}
                                     </p>
-                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-[var(--color-ink-soft)]">Due Soon</p>
+                                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-(--color-ink-soft)">Due Soon</p>
                               </div>
                         </div>
                   )}
@@ -100,7 +100,7 @@ export default function TeacherDashboardPage() {
                                           {assignments.map((a) => (
                                                 <tr key={a.id}>
                                                       <td>
-                                                            <Link href={`/teacher/assignments/${a.id}`} className="font-medium text-[var(--color-primary-dark)] hover:underline">
+                                                            <Link href={`/teacher/assignments/${a.id}`} className="font-medium text-(--color-primary-dark) hover:underline">
                                                                   {a.title}
                                                             </Link>
                                                       </td>
@@ -115,7 +115,7 @@ export default function TeacherDashboardPage() {
                                           ))}
                                           {assignments.length === 0 && !loading && (
                                                 <tr>
-                                                      <td colSpan={4} className="text-center text-[var(--color-ink-soft)]">
+                                                      <td colSpan={4} className="text-center text-(--color-ink-soft)">
                                                             No assignments yet.
                                                       </td>
                                                 </tr>

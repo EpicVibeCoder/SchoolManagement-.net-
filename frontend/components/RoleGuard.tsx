@@ -24,7 +24,7 @@ export default function RoleGuard({ role, children }: { role: UserRole; children
       if (loading || !user || user.role !== role) {
             return (
                   <div className="flex min-h-screen flex-1 items-center justify-center">
-                        <p className="text-sm text-[var(--color-ink-soft)]">Loading…</p>
+                        <p className="text-sm text-(--color-ink-soft)">Loading…</p>
                   </div>
             );
       }

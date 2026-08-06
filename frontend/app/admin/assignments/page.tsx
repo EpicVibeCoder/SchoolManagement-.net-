@@ -54,7 +54,7 @@ export default function AdminAssignmentsPage() {
                                     <tbody>
                                           {assignments.map((a) => (
                                                 <tr key={a.id}>
-                                                      <td className="font-medium text-[var(--color-primary-dark)]">{a.title}</td>
+                                                      <td className="font-medium text-(--color-primary-dark)">{a.title}</td>
                                                       <td>{a.className}</td>
                                                       <td>{a.subjectName}</td>
                                                       <td>{a.teacherName}</td>
@@ -68,7 +68,7 @@ export default function AdminAssignmentsPage() {
                                           ))}
                                           {assignments.length === 0 && (
                                                 <tr>
-                                                      <td colSpan={8} className="text-center text-[var(--color-ink-soft)]">
+                                                      <td colSpan={8} className="text-center text-(--color-ink-soft)">
                                                             No assignments yet.
                                                       </td>
                                                 </tr>

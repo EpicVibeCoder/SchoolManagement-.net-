@@ -55,7 +55,7 @@ export default function AdminSubmissionsPage() {
                                     <tbody>
                                           {submissions.map((s) => (
                                                 <tr key={s.id}>
-                                                      <td className="font-medium text-[var(--color-primary-dark)]">{s.assignmentTitle}</td>
+                                                      <td className="font-medium text-(--color-primary-dark)">{s.assignmentTitle}</td>
                                                       <td>{s.studentName}</td>
                                                       <td>{formatDateTime(s.submittedAt)}</td>
                                                       <td>
@@ -66,7 +66,7 @@ export default function AdminSubmissionsPage() {
                                           ))}
                                           {submissions.length === 0 && (
                                                 <tr>
-                                                      <td colSpan={5} className="text-center text-[var(--color-ink-soft)]">
+                                                      <td colSpan={5} className="text-center text-(--color-ink-soft)">
                                                             No submissions yet.
                                                       </td>
                                                 </tr>

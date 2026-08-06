@@ -70,7 +70,7 @@ export default function NotificationsPage() {
       if (authLoading || !user) {
             return (
                   <div className="flex min-h-screen flex-1 items-center justify-center">
-                        <p className="text-sm text-[var(--color-ink-soft)]">Loading…</p>
+                        <p className="text-sm text-(--color-ink-soft)">Loading…</p>
                   </div>
             );
       }
@@ -97,14 +97,14 @@ export default function NotificationsPage() {
                   {!loading && (
                         <div className="space-y-2">
                               {notifications.map((n) => (
-                                    <div key={n.id} className={`sm-card flex items-start justify-between gap-4 p-4 ${n.isRead ? "" : "border-[var(--color-primary-soft)]"}`}>
+                                    <div key={n.id} className={`sm-card flex items-start justify-between gap-4 p-4 ${n.isRead ? "" : "border-(--color-primary-soft)"}`}>
                                           <div>
                                                 <div className="flex items-center gap-2">
-                                                      {!n.isRead && <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />}
-                                                      <p className="font-medium text-[var(--color-primary-dark)]">{n.title}</p>
+                                                      {!n.isRead && <span className="h-2 w-2 rounded-full bg-(--color-accent)" />}
+                                                      <p className="font-medium text-(--color-primary-dark)">{n.title}</p>
                                                 </div>
-                                                <p className="mt-1 text-sm text-[var(--color-ink-soft)]">{n.body}</p>
-                                                <p className="mt-2 text-xs text-[var(--color-muted)]">{formatDateTime(n.createdAt)}</p>
+                                                <p className="mt-1 text-sm text-(--color-ink-soft)">{n.body}</p>
+                                                <p className="mt-2 text-xs text-(--color-muted)">{formatDateTime(n.createdAt)}</p>
                                           </div>
                                           {!n.isRead && (
                                                 <button type="button" className="sm-btn sm-btn-secondary shrink-0" disabled={busyId === n.id} onClick={() => markRead(n.id)}>
@@ -113,7 +113,7 @@ export default function NotificationsPage() {
                                           )}
                                     </div>
                               ))}
-                              {notifications.length === 0 && <div className="sm-card p-8 text-center text-sm text-[var(--color-ink-soft)]">No notifications yet.</div>}
+                              {notifications.length === 0 && <div className="sm-card p-8 text-center text-sm text-(--color-ink-soft)">No notifications yet.</div>}
                         </div>
                   )}
             </AppShell>

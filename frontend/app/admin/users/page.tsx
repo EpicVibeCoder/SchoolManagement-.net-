@@ -125,21 +125,21 @@ export default function AdminUsersPage() {
                                                 Full name
                                           </label>
                                           <input id="fullName" className="sm-input" {...register("fullName")} />
-                                          {errors.fullName && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.fullName.message}</p>}
+                                          {errors.fullName && <p className="mt-1 text-xs text-(--color-danger)">{errors.fullName.message}</p>}
                                     </div>
                                     <div>
                                           <label className="sm-label" htmlFor="email">
                                                 Email
                                           </label>
                                           <input id="email" type="email" className="sm-input" {...register("email")} />
-                                          {errors.email && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.email.message}</p>}
+                                          {errors.email && <p className="mt-1 text-xs text-(--color-danger)">{errors.email.message}</p>}
                                     </div>
                                     <div>
                                           <label className="sm-label" htmlFor="password">
                                                 Password
                                           </label>
                                           <input id="password" type="password" className="sm-input" {...register("password")} />
-                                          {errors.password && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.password.message}</p>}
+                                          {errors.password && <p className="mt-1 text-xs text-(--color-danger)">{errors.password.message}</p>}
                                     </div>
                                     <div>
                                           <label className="sm-label" htmlFor="role">
@@ -191,7 +191,7 @@ export default function AdminUsersPage() {
                                                 <tbody>
                                                       {result.items.map((u) => (
                                                             <tr key={u.id}>
-                                                                  <td className="font-medium text-[var(--color-primary-dark)]">{u.fullName}</td>
+                                                                  <td className="font-medium text-(--color-primary-dark)">{u.fullName}</td>
                                                                   <td>{u.email}</td>
                                                                   <td>
                                                                         <RoleBadge role={u.role} />
@@ -216,7 +216,7 @@ export default function AdminUsersPage() {
                                                       ))}
                                                       {result.items.length === 0 && (
                                                             <tr>
-                                                                  <td colSpan={6} className="text-center text-[var(--color-ink-soft)]">
+                                                                  <td colSpan={6} className="text-center text-(--color-ink-soft)">
                                                                         No users found.
                                                                   </td>
                                                             </tr>

@@ -15,7 +15,7 @@ export default function Home() {
 
       return (
             <div className="flex flex-1 items-center justify-center">
-                  <p className="text-sm text-[var(--color-ink-soft)]">Loading School Management…</p>
+                  <p className="text-sm text-(--color-ink-soft)">Loading School Management…</p>
             </div>
       );
 }

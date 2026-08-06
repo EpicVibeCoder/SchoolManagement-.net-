@@ -66,7 +66,7 @@ export default function LoginPage() {
                   <div className="w-full max-w-md">
                         <div className="mb-8 text-center">
                               <h1 className="text-3xl font-semibold">School Management</h1>
-                              <p className="mt-2 text-sm text-[var(--color-ink-soft)]">Sign in to access your dashboard</p>
+                              <p className="mt-2 text-sm text-(--color-ink-soft)">Sign in to access your dashboard</p>
                         </div>
 
                         <div className="sm-card p-6 sm:p-8">
@@ -78,7 +78,7 @@ export default function LoginPage() {
                                                 Email
                                           </label>
                                           <input id="email" type="email" className="sm-input" placeholder="you@school.com" autoComplete="email" {...register("email")} />
-                                          {errors.email && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.email.message}</p>}
+                                          {errors.email && <p className="mt-1 text-xs text-(--color-danger)">{errors.email.message}</p>}
                                     </div>
 
                                     <div>
@@ -86,7 +86,7 @@ export default function LoginPage() {
                                                 Password
                                           </label>
                                           <input id="password" type="password" className="sm-input" placeholder="••••••••" autoComplete="current-password" {...register("password")} />
-                                          {errors.password && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.password.message}</p>}
+                                          {errors.password && <p className="mt-1 text-xs text-(--color-danger)">{errors.password.message}</p>}
                                     </div>
 
                                     <button type="submit" className="sm-btn sm-btn-primary w-full" disabled={submitting}>
@@ -103,10 +103,10 @@ export default function LoginPage() {
                                                 key={account.email}
                                                 type="button"
                                                 onClick={() => fillDemo(account.email, account.password)}
-                                                className="flex w-full items-center justify-between rounded-md border border-[var(--color-border)] bg-[var(--color-surface-raised)] px-3 py-2 text-left text-xs transition hover:border-[var(--color-primary-soft)]"
+                                                className="flex w-full items-center justify-between rounded-md border border-(--color-border) bg-(--color-surface-raised) px-3 py-2 text-left text-xs transition hover:border-(--color-primary-soft)"
                                           >
-                                                <span className="font-semibold text-[var(--color-primary-dark)]">{account.role}</span>
-                                                <span className="text-[var(--color-ink-soft)]">
+                                                <span className="font-semibold text-(--color-primary-dark)">{account.role}</span>
+                                                <span className="text-(--color-ink-soft)">
                                                       {account.email} / {account.password}
                                                 </span>
                                           </button>
