@@ -58,7 +58,7 @@ Built following a single Web API host architecture in **ASP.NET Core 10** paired
 | **Frontend Framework** | Next.js | **16.x** (App Router, React 19, TypeScript) |
 | **Styling & UI** | Tailwind CSS | Modern, responsive CSS design |
 | **Forms & Schemas** | React Hook Form + Zod | Schema-based form validation |
-| **Automated Testing** | xUnit | Sibling test project (`tests/Backend.Tests`) |
+| **Automated Testing** | xUnit | Test project (`backend/Backend.Tests`) |
 
 ---
 
@@ -155,7 +155,7 @@ SQL backup (after seed): `docs/db/seed-backup.sql`
 
 ### Step 6: Running Automated Tests
 ```bash
-dotnet test tests/Backend.Tests/Backend.Tests.csproj
+dotnet test backend/Backend.Tests/Backend.Tests.csproj
 ```
 
 Optional pgAdmin (Docker profile `tools`):

@@ -14,7 +14,7 @@ jobs:
         with:
           dotnet-version: "10.0.x"
       - name: Test
-        run: dotnet test tests/Backend.Tests/Backend.Tests.csproj --configuration Release
+        run: dotnet test backend/Backend.Tests/Backend.Tests.csproj --configuration Release
 
   frontend:
     runs-on: ubuntu-latest
