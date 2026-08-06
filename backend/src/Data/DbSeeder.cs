@@ -84,7 +84,6 @@ public static class DbSeeder
             Id = SubjectMathId,
             Name = "Mathematics",
             Code = "MATH",
-            ClassId = ClassId,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -93,7 +92,6 @@ public static class DbSeeder
             Id = SubjectEngId,
             Name = "English",
             Code = "ENG",
-            ClassId = ClassId,
             CreatedAt = now,
             UpdatedAt = now
         };

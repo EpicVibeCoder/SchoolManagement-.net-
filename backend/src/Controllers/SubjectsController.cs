@@ -15,9 +15,9 @@ public class SubjectsController : ControllerBase
     public SubjectsController(ISubjectService subjectService) => _subjectService = subjectService;
 
     [HttpGet]
-    public async Task<ActionResult<List<SubjectDto>>> List([FromQuery] Guid? classId, CancellationToken ct)
+    public async Task<ActionResult<List<SubjectDto>>> List(CancellationToken ct)
     {
-        var result = await _subjectService.ListAsync(classId, ct);
+        var result = await _subjectService.ListAsync( ct);
         return Ok(result);
     }
 

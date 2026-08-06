@@ -9,7 +9,6 @@ public class Class
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 
-    public ICollection<Subject> Subjects { get; set; } = [];
     public ICollection<TeacherAssignment> TeacherAssignments { get; set; } = [];
     public ICollection<StudentEnrollment> StudentEnrollments { get; set; } = [];
     public ICollection<Assignment> Assignments { get; set; } = [];

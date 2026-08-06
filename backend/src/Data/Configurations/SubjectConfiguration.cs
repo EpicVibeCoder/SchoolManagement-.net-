@@ -14,11 +14,7 @@ public class SubjectConfiguration : IEntityTypeConfiguration<Subject>
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Code).HasMaxLength(50).IsRequired();
 
-        builder.HasIndex(x => new { x.ClassId, x.Code }).IsUnique();
+        builder.HasIndex(x => x.Code).IsUnique();
 
-        builder.HasOne(x => x.Class)
-            .WithMany(c => c.Subjects)
-            .HasForeignKey(x => x.ClassId)
-            .OnDelete(DeleteBehavior.Restrict);
-    }
+    }     
 }

@@ -84,8 +84,7 @@ public class ClassService : IClassService
         var klass = await _db.Classes.FirstOrDefaultAsync(c => c.Id == id, ct)
             ?? throw new NotFoundException("Class not found.");
 
-        var inUse = await _db.Subjects.AnyAsync(s => s.ClassId == id, ct)
-            || await _db.StudentEnrollments.AnyAsync(e => e.ClassId == id, ct)
+        var inUse =  await _db.StudentEnrollments.AnyAsync(e => e.ClassId == id, ct)
             || await _db.TeacherAssignments.AnyAsync(t => t.ClassId == id, ct)
             || await _db.Assignments.AnyAsync(a => a.ClassId == id, ct);
 

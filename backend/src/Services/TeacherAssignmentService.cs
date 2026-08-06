@@ -52,8 +52,6 @@ public class TeacherAssignmentService : ITeacherAssignmentService
 
         var subject = await _db.Subjects.FirstOrDefaultAsync(s => s.Id == request.SubjectId, ct)
             ?? throw new NotFoundException("Subject not found.");
-        if (subject.ClassId != request.ClassId)
-            throw new AppException("The subject does not belong to the selected class.", 400, "invalid_subject");
 
         var exists = await _db.TeacherAssignments.AnyAsync(
             t => t.TeacherId == request.TeacherId && t.ClassId == request.ClassId && t.SubjectId == request.SubjectId, ct);

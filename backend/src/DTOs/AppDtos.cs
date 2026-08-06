@@ -12,9 +12,9 @@ public record ClassDto(Guid Id, string Name, string Code, string AcademicYear);
 public record CreateClassRequest(string Name, string Code, string AcademicYear);
 public record UpdateClassRequest(string Name, string Code, string AcademicYear);
 
-public record SubjectDto(Guid Id, string Name, string Code, Guid ClassId, string? ClassName);
-public record CreateSubjectRequest(string Name, string Code, Guid ClassId);
-public record UpdateSubjectRequest(string Name, string Code, Guid ClassId);
+public record SubjectDto(Guid Id, string Name, string Code);
+public record CreateSubjectRequest(string Name, string Code);
+public record UpdateSubjectRequest(string Name, string Code);
 
 public record TeacherAssignmentDto(Guid Id, Guid TeacherId, string TeacherName, Guid ClassId, string ClassName, Guid SubjectId, string SubjectName);
 public record CreateTeacherAssignmentRequest(Guid TeacherId, Guid ClassId, Guid SubjectId);
