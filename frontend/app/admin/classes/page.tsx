@@ -20,10 +20,21 @@ export default function AdminClassesPage() {
       const [classes, setClasses] = useState<ClassDto[]>([]);
       const [loading, setLoading] = useState(true);
       const [error, setError] = useState<string | null>(null);
+      const [search, setSearch] = useState("");
       const [formError, setFormError] = useState<string | null>(null);
       const [submitting, setSubmitting] = useState(false);
       const [editingId, setEditingId] = useState<string | null>(null);
       const [busyId, setBusyId] = useState<string | null>(null);
+
+      const filteredClasses = classes.filter((klass) => {
+            const q = search.trim().toLowerCase();
+            if (!q) return true;
+            return (
+                  klass.name.toLowerCase().includes(q) ||
+                  klass.code.toLowerCase().includes(q) ||
+                  klass.academicYear.toLowerCase().includes(q)
+            );
+      });
 
       const {
             register,
@@ -137,6 +148,16 @@ export default function AdminClassesPage() {
                         </div>
 
                         <div className="lg:col-span-2 lg:order-1">
+                              <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+                                    <input
+                                          type="text"
+                                          className="sm-input sm:max-w-xs"
+                                          placeholder="Search by name, code, or year…"
+                                          value={search}
+                                          onChange={(e) => setSearch(e.target.value)}
+                                    />
+                              </div>
+
                               {loading && <LoadingBlock label="Loading classes…" />}
                               {error && <ErrorBlock message={error} />}
 
@@ -152,7 +173,7 @@ export default function AdminClassesPage() {
                                                       </tr>
                                                 </thead>
                                                 <tbody>
-                                                      {classes.map((klass) => (
+                                                      {filteredClasses.map((klass) => (
                                                             <tr key={klass.id}>
                                                                   <td className="font-medium text-[var(--color-primary-dark)]">{klass.name}</td>
                                                                   <td>{klass.code}</td>
@@ -173,6 +194,13 @@ export default function AdminClassesPage() {
                                                             <tr>
                                                                   <td colSpan={4} className="text-center text-[var(--color-ink-soft)]">
                                                                         No classes yet.
+                                                                  </td>
+                                                            </tr>
+                                                      )}
+                                                      {classes.length > 0 && filteredClasses.length === 0 && (
+                                                            <tr>
+                                                                  <td colSpan={4} className="text-center text-[var(--color-ink-soft)]">
+                                                                        No classes match your search.
                                                                   </td>
                                                             </tr>
                                                       )}
