@@ -8,11 +8,20 @@ import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, ClassDto, del, get, post, put } from "@/lib/api";
 
-const classSchema = z.object({
-      name: z.string().min(1, "Name is required"),
-      code: z.string().min(1, "Code is required"),
-      academicYear: z.string().min(1, "Academic year is required"),
-});
+const currentYear = new Date().getFullYear();
+const yearOptions = Array.from({ length: 16 }, (_, i) => (currentYear - 5 + i).toString());
+
+const classSchema = z
+      .object({
+            name: z.string().min(1, "Name is required"),
+            code: z.string().min(1, "Code is required"),
+            startYear: z.string().min(1, "Start year is required"),
+            endYear: z.string().min(1, "End year is required"),
+      })
+      .refine((data) => parseInt(data.endYear, 10) >= parseInt(data.startYear, 10), {
+            message: "End year must be greater than or equal to start year",
+            path: ["endYear"],
+      });
 
 type ClassFormValues = z.infer<typeof classSchema>;
 
@@ -36,15 +45,41 @@ export default function AdminClassesPage() {
             );
       });
 
+      const parseAcademicYear = (academicYear: string) => {
+            const parts = academicYear.split("-").map((s) => s.trim());
+            const startYear = parts[0] || currentYear.toString();
+            const endYear = parts[1] || startYear;
+            return { startYear, endYear };
+      };
+
       const {
             register,
             handleSubmit,
             reset,
+            watch,
+            setValue,
             formState: { errors },
       } = useForm<ClassFormValues>({
             resolver: zodResolver(classSchema),
-            defaultValues: { name: "", code: "", academicYear: "" },
+            defaultValues: {
+                  name: "",
+                  code: "",
+                  startYear: currentYear.toString(),
+                  endYear: (currentYear + 1).toString(),
+            },
       });
+
+      const watchStartYear = watch("startYear");
+
+      useEffect(() => {
+            if (watchStartYear) {
+                  const startNum = parseInt(watchStartYear, 10);
+                  const currentEndNum = parseInt(watch("endYear") || "0", 10);
+                  if (isNaN(currentEndNum) || currentEndNum < startNum) {
+                        setValue("endYear", (startNum + 1).toString(), { shouldValidate: true });
+                  }
+            }
+      }, [watchStartYear, setValue, watch]);
 
       const load = async () => {
             setLoading(true);
@@ -66,22 +101,37 @@ export default function AdminClassesPage() {
       const startEdit = (klass: ClassDto) => {
             setEditingId(klass.id);
             setFormError(null);
-            reset({ name: klass.name, code: klass.code, academicYear: klass.academicYear });
+            const { startYear, endYear } = parseAcademicYear(klass.academicYear);
+            reset({ name: klass.name, code: klass.code, startYear, endYear });
       };
 
       const cancelEdit = () => {
             setEditingId(null);
-            reset({ name: "", code: "", academicYear: "" });
+            reset({
+                  name: "",
+                  code: "",
+                  startYear: currentYear.toString(),
+                  endYear: (currentYear + 1).toString(),
+            });
       };
 
       const onSubmit = async (values: ClassFormValues) => {
             setFormError(null);
             setSubmitting(true);
+            const academicYear = `${values.startYear}-${values.endYear}`;
             try {
                   if (editingId) {
-                        await put<ClassDto>(`/api/classes/${editingId}`, values);
+                        await put<ClassDto>(`/api/classes/${editingId}`, {
+                              name: values.name,
+                              code: values.code,
+                              academicYear,
+                        });
                   } else {
-                        await post<ClassDto>("/api/classes", values);
+                        await post<ClassDto>("/api/classes", {
+                              name: values.name,
+                              code: values.code,
+                              academicYear,
+                        });
                   }
                   cancelEdit();
                   await load();
@@ -128,11 +178,35 @@ export default function AdminClassesPage() {
                                           {errors.code && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.code.message}</p>}
                                     </div>
                                     <div>
-                                          <label className="sm-label" htmlFor="academicYear">
-                                                Academic year
-                                          </label>
-                                          <input id="academicYear" className="sm-input" placeholder="2025-2026" {...register("academicYear")} />
-                                          {errors.academicYear && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.academicYear.message}</p>}
+                                          <label className="sm-label">Academic year</label>
+                                          <div className="grid grid-cols-2 gap-2 mt-1">
+                                                <div>
+                                                      <label className="text-xs text-[var(--color-ink-soft)] font-medium block mb-1" htmlFor="startYear">
+                                                            Start Year
+                                                      </label>
+                                                      <select id="startYear" className="sm-input" {...register("startYear")}>
+                                                            {yearOptions.map((year) => (
+                                                                  <option key={year} value={year}>
+                                                                        {year}
+                                                                  </option>
+                                                            ))}
+                                                      </select>
+                                                      {errors.startYear && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.startYear.message}</p>}
+                                                </div>
+                                                <div>
+                                                      <label className="text-xs text-[var(--color-ink-soft)] font-medium block mb-1" htmlFor="endYear">
+                                                            End Year
+                                                      </label>
+                                                      <select id="endYear" className="sm-input" {...register("endYear")}>
+                                                            {yearOptions.map((year) => (
+                                                                  <option key={year} value={year}>
+                                                                        {year}
+                                                                  </option>
+                                                            ))}
+                                                      </select>
+                                                      {errors.endYear && <p className="mt-1 text-xs text-[var(--color-danger)]">{errors.endYear.message}</p>}
+                                                </div>
+                                          </div>
                                     </div>
                                     <div className="flex gap-2">
                                           <button type="submit" className="sm-btn sm-btn-primary flex-1" disabled={submitting}>
