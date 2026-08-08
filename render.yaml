@@ -20,7 +20,7 @@ services:
       - key: Jwt__Audience
         value: SchoolManagementApp
       - key: FRONTEND_ORIGIN
-        value: http://localhost:3000
+        value: https://school-management-net-chi.vercel.app
 
 databases:
   - name: school-management-db
