@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState,useMemo } from "react";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import { AssignmentStatusBadge } from "@/components/Badge";
@@ -8,37 +8,34 @@ import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AssignmentDto, DashboardStatsDto, get } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
 export default function TeacherDashboardPage() {
       const { user } = useAuth();
-      const [stats, setStats] = useState<DashboardStatsDto | null>(null);
-      const [assignments, setAssignments] = useState<AssignmentDto[]>([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
+      const dashboardQuery = useQuery({
+            queryKey: queryKeys.dashboard,
+            queryFn: () => get<DashboardStatsDto>("/api/dashboard"),
+      });
+      const assignmentsQuery = useQuery({
+            queryKey: queryKeys.assignments,
+            queryFn: () => get<AssignmentDto[]>("/api/assignments"),
+            enabled: !!user?.id,
+      });
+      const upcoming = useMemo(() => {
+            if (!assignmentsQuery.data || !user?.id) return [];
+            return assignmentsQuery.data
+                  .filter((a) => a.createdByTeacherId === user.id)
+                  .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+                  .slice(0, 5);
+      }, [assignmentsQuery.data, user?.id]);
+      const loading = dashboardQuery.isPending || assignmentsQuery.isPending;
+      const error =
+            dashboardQuery.error instanceof ApiError ? dashboardQuery.error.message : assignmentsQuery.error instanceof ApiError ? assignmentsQuery.error.message : dashboardQuery.error || assignmentsQuery.error ? "Failed to load dashboard." : null;
+      const stats = dashboardQuery.data;
+      
 
-      useEffect(() => {
-            let cancelled = false;
-            Promise.all([get<DashboardStatsDto>("/api/dashboard"), get<AssignmentDto[]>("/api/assignments")])
-                  .then(([statsData, assignmentsData]) => {
-                        if (cancelled) return;
-                        setStats(statsData);
-                        setAssignments(
-                              assignmentsData
-                                    .filter((a) => a.createdByTeacherId === user?.id)
-                                    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-                                    .slice(0, 5),
-                        );
-                  })
-                  .catch((err) => {
-                        if (!cancelled) setError(err instanceof ApiError ? err.message : "Failed to load dashboard.");
-                  })
-                  .finally(() => {
-                        if (!cancelled) setLoading(false);
-                  });
-            return () => {
-                  cancelled = true;
-            };
-      }, [user?.id]);
+     
 
       return (
             <div>
@@ -97,7 +94,7 @@ export default function TeacherDashboardPage() {
                                           </tr>
                                     </thead>
                                     <tbody>
-                                          {assignments.map((a) => (
+                                          {upcoming.map((a) => (
                                                 <tr key={a.id}>
                                                       <td>
                                                             <Link href={`/teacher/assignments/${a.id}`} className="font-medium text-(--color-primary-dark) hover:underline">
@@ -113,7 +110,7 @@ export default function TeacherDashboardPage() {
                                                       </td>
                                                 </tr>
                                           ))}
-                                          {assignments.length === 0 && !loading && (
+                                          {upcoming.length === 0 && !loading && (
                                                 <tr>
                                                       <td colSpan={4} className="text-center text-(--color-ink-soft)">
                                                             No assignments yet.

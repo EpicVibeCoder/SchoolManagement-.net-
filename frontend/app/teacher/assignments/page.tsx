@@ -11,6 +11,9 @@ import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AssignmentDto, AssignmentStatus, TeacherAssignmentDto, del, get, post, put } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
+
 
 const assignmentSchema = z.object({
       title: z.string().min(1, "Title is required"),
@@ -25,6 +28,7 @@ type AssignmentFormInput = z.input<typeof assignmentSchema>;
 type AssignmentFormValues = z.output<typeof assignmentSchema>;
 
 export default function TeacherAssignmentsPage() {
+      
       const { user } = useAuth();
       const [assignments, setAssignments] = useState<AssignmentDto[]>([]);
       const [teachingAssignments, setTeachingAssignments] = useState<TeacherAssignmentDto[]>([]);
