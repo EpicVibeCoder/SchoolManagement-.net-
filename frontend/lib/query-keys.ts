@@ -1,0 +1,13 @@
+export const queryKeys = {
+      subjects: ["subjects"] as const,
+      classes: ["classes"] as const,
+      users: (search?: string, role?: string) => ["users", { search, role }] as const,
+      enrollments: (classId?: string) => ["enrollments", { classId }] as const,
+      teacherAssignments: (teacherId?: string) => ["teacher-assignments", { teacherId }] as const,
+      assignments: ["assignments"] as const,
+      assignment: (id: string) => ["assignments", id] as const,
+      submissions: (assignmentId: string) => ["submissions", { assignmentId }] as const,
+      mySubmissions: ["submissions", "mine"] as const,
+      dashboard: ["dashboard"] as const,
+      notificationsUnread: ["notifications", "unread-count"] as const,
+};

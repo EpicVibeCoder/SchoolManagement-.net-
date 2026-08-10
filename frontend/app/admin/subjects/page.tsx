@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {  useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, SubjectDto, del, get, post, put } from "@/lib/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
+
 
 const subjectSchema = z.object({
       name: z.string().min(1, "Name is required"),
@@ -16,13 +19,21 @@ const subjectSchema = z.object({
 type SubjectFormValues = z.infer<typeof subjectSchema>;
 
 export default function AdminSubjectsPage() {
-      const [subjects, setSubjects] = useState<SubjectDto[]>([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
+      const queryClient = useQueryClient();
+      const {
+            data: subjects = [],
+            isPending: loading,
+            error,
+      } = useQuery({
+            queryKey: queryKeys.subjects,
+            queryFn: () => get<SubjectDto[]>("/api/subjects"),
+      });
+      const errorMessage = error instanceof ApiError ? error.message : error ? "Failed to load subjects." : null;
       const [formError, setFormError] = useState<string | null>(null);
       const [submitting, setSubmitting] = useState(false);
       const [editingId, setEditingId] = useState<string | null>(null);
       const [busyId, setBusyId] = useState<string | null>(null);
+     const [actionError, setActionError] = useState<string | null>(null);
 
       const {
             register,
@@ -33,23 +44,6 @@ export default function AdminSubjectsPage() {
             resolver: zodResolver(subjectSchema),
             defaultValues: { name: "", code: "" },
       });
-
-      const loadSubjects = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                  const data = await get<SubjectDto[]>("/api/subjects");
-                  setSubjects(data);
-            } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to load subjects.");
-            } finally {
-                  setLoading(false);
-            }
-      };
-
-      useEffect(() => {
-            loadSubjects();
-      }, []);
 
       const startEdit = (subject: SubjectDto) => {
             setEditingId(subject.id);
@@ -72,7 +66,7 @@ export default function AdminSubjectsPage() {
                         await post<SubjectDto>("/api/subjects", values);
                   }
                   cancelEdit();
-                  await loadSubjects();
+                  queryClient.invalidateQueries({ queryKey: queryKeys.subjects });
             } catch (err) {
                   setFormError(err instanceof ApiError ? err.message : "Failed to save subject.");
             } finally {
@@ -82,11 +76,12 @@ export default function AdminSubjectsPage() {
 
       const remove = async (id: string) => {
             setBusyId(id);
+            setActionError(null);
             try {
                   await del(`/api/subjects/${id}`);
-                  await loadSubjects();
+                  await queryClient.invalidateQueries({ queryKey: queryKeys.subjects });
             } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to delete subject.");
+                  setActionError(err instanceof ApiError ? err.message : "Failed to delete subject.");
             } finally {
                   setBusyId(null);
             }
@@ -130,7 +125,7 @@ export default function AdminSubjectsPage() {
 
                         <div className="lg:col-span-2 lg:order-1">
                               {loading && <LoadingBlock label="Loading subjects…" />}
-                              {error && <ErrorBlock message={error} />}
+                              {error && <ErrorBlock message={errorMessage ?? actionError!} />}
 
                               {!loading && (
                                     <div className="sm-card overflow-x-auto">

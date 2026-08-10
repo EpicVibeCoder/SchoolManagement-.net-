@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Source_Sans_3, Source_Serif_4 } from "next/font/google";
 import { AuthProvider } from "@/lib/auth";
 import "./globals.css";
+import QueryProvider from "@/components/QueryProvider";
 
 const sourceSerif = Source_Serif_4({
       variable: "--font-source-serif",
@@ -24,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       return (
             <html lang="en" className={`h-full antialiased ${sourceSerif.variable} ${sourceSans.variable}`}>
                   <body className="min-h-full flex flex-col">
-                        <AuthProvider>{children}</AuthProvider>
+                        <AuthProvider><QueryProvider>{children}</QueryProvider></AuthProvider>
                   </body>
             </html>
       );
