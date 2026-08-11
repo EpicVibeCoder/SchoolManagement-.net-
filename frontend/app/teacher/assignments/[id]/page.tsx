@@ -8,7 +8,8 @@ import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AssignmentDto, SubmissionDto, get, put } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
-
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 interface GradeDraft {
       marks: string;
       feedback: string;
@@ -17,46 +18,52 @@ interface GradeDraft {
 export default function TeacherAssignmentDetailPage() {
       const params = useParams<{ id: string }>();
       const router = useRouter();
-      const assignmentId = params.id;
 
-      const [assignment, setAssignment] = useState<AssignmentDto | null>(null);
-      const [submissions, setSubmissions] = useState<SubmissionDto[]>([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
       const [drafts, setDrafts] = useState<Record<string, GradeDraft>>({});
       const [savingId, setSavingId] = useState<string | null>(null);
       const [rowError, setRowError] = useState<Record<string, string>>({});
 
-      const load = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                  const [assignmentData, submissionsData] = await Promise.all([get<AssignmentDto>(`/api/assignments/${assignmentId}`), get<SubmissionDto[]>(`/api/assignments/${assignmentId}/submissions`)]);
-                  setAssignment(assignmentData);
-                  setSubmissions(submissionsData);
-                  setDrafts((prev) => {
-                        const next = { ...prev };
-                        submissionsData.forEach((s) => {
-                              if (!next[s.id]) {
-                                    next[s.id] = { marks: s.marks?.toString() ?? "", feedback: s.feedback ?? "" };
-                              }
-                        });
-                        return next;
-                  });
-            } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to load assignment.");
-            } finally {
-                  setLoading(false);
-            }
-      };
+      const queryClient = useQueryClient();
+      const assignmentId = params.id;
+      const assignmentQuery = useQuery({
+            queryKey: queryKeys.assignment(assignmentId),
+            queryFn: () => get<AssignmentDto>(`/api/assignments/${assignmentId}`),
+            enabled: !!assignmentId,
+      });
+      const submissionsQuery = useQuery({
+            queryKey: queryKeys.submissions(assignmentId),
+            queryFn: () => get<SubmissionDto[]>(`/api/assignments/${assignmentId}/submissions`),
+            enabled: !!assignmentId,
+      });
+      const assignment = assignmentQuery.data ?? null;
+      const submissions = submissionsQuery.data ?? [];
+      const loading = assignmentQuery.isPending || submissionsQuery.isPending;
+      const error =
+            assignmentQuery.error instanceof ApiError
+                  ? assignmentQuery.error.message
+                  : submissionsQuery.error instanceof ApiError
+                    ? submissionsQuery.error.message
+                    : assignmentQuery.error || submissionsQuery.error
+                      ? "Failed to load assignment."
+                      : null;
 
       useEffect(() => {
-            load();
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [assignmentId]);
-
+            if (!submissionsQuery.data) return;
+            setDrafts((prev) => {
+                  const next = { ...prev };
+                  submissionsQuery.data!.forEach((s) => {
+                        if (!next[s.id]) {
+                              next[s.id] = { marks: s.marks?.toString() ?? "", feedback: s.feedback ?? "" };
+                        }
+                  });
+                  return next;
+            });
+      }, [submissionsQuery.data]);
       const updateDraft = (id: string, field: keyof GradeDraft, value: string) => {
-            setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+            setDrafts((prev) => ({
+                  ...prev,
+                  [id]: { ...prev[id], [field]: value },
+            }));
       };
 
       const submitGrade = async (submission: SubmissionDto) => {
@@ -78,7 +85,10 @@ export default function TeacherAssignmentDetailPage() {
                         feedback: draft.feedback ?? "",
                         status: null,
                   });
-                  await load();
+                  await queryClient.invalidateQueries({ queryKey: queryKeys.submissions(assignmentId) });
+                  await queryClient.invalidateQueries({ queryKey: queryKeys.assignment(assignmentId) });
+                  await queryClient.invalidateQueries({ queryKey: queryKeys.assignments });
+                  await queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
             } catch (err) {
                   setRowError((prev) => ({
                         ...prev,
@@ -95,11 +105,19 @@ export default function TeacherAssignmentDetailPage() {
 
       return (
             <div>
-                  <button type="button" onClick={() => router.push("/teacher/assignments")} className="mb-4 text-sm text-(--color-ink-soft) hover:underline">
+                  <button
+                        type="button"
+                        onClick={() => router.push("/teacher/assignments")}
+                        className="mb-4 text-sm text-(--color-ink-soft) hover:underline"
+                  >
                         ← Back to assignments
                   </button>
 
-                  <PageHeader title={assignment.title} description={`${assignment.className} · ${assignment.subjectName} · Due ${formatDateTime(assignment.deadline)}`} actions={<AssignmentStatusBadge status={assignment.status} />} />
+                  <PageHeader
+                        title={assignment.title}
+                        description={`${assignment.className} · ${assignment.subjectName} · Due ${formatDateTime(assignment.deadline)}`}
+                        actions={<AssignmentStatusBadge status={assignment.status} />}
+                  />
 
                   <div className="sm-card mb-6 p-5">
                         <p className="text-sm text-(--color-ink-soft)">Description</p>
@@ -134,22 +152,42 @@ export default function TeacherAssignmentDetailPage() {
                                                 <label className="sm-label" htmlFor={`marks-${s.id}`}>
                                                       Marks (/ {s.maxMarks})
                                                 </label>
-                                                <input id={`marks-${s.id}`} type="number" min={0} max={s.maxMarks} className="sm-input" value={drafts[s.id]?.marks ?? ""} onChange={(e) => updateDraft(s.id, "marks", e.target.value)} />
+                                                <input
+                                                      id={`marks-${s.id}`}
+                                                      type="number"
+                                                      min={0}
+                                                      max={s.maxMarks}
+                                                      className="sm-input"
+                                                      value={drafts[s.id]?.marks ?? ""}
+                                                      onChange={(e) => updateDraft(s.id, "marks", e.target.value)}
+                                                />
                                           </div>
                                           <div>
                                                 <label className="sm-label" htmlFor={`feedback-${s.id}`}>
                                                       Feedback
                                                 </label>
-                                                <input id={`feedback-${s.id}`} className="sm-input" value={drafts[s.id]?.feedback ?? ""} onChange={(e) => updateDraft(s.id, "feedback", e.target.value)} />
+                                                <input
+                                                      id={`feedback-${s.id}`}
+                                                      className="sm-input"
+                                                      value={drafts[s.id]?.feedback ?? ""}
+                                                      onChange={(e) => updateDraft(s.id, "feedback", e.target.value)}
+                                                />
                                           </div>
-                                          <button type="button" className="sm-btn sm-btn-primary" disabled={savingId === s.id} onClick={() => submitGrade(s)}>
+                                          <button
+                                                type="button"
+                                                className="sm-btn sm-btn-primary"
+                                                disabled={savingId === s.id}
+                                                onClick={() => submitGrade(s)}
+                                          >
                                                 {savingId === s.id ? "Saving…" : "Save grade"}
                                           </button>
                                     </div>
                                     {rowError[s.id] && <p className="mt-2 text-xs text-(--color-danger)">{rowError[s.id]}</p>}
                               </div>
                         ))}
-                        {submissions.length === 0 && <div className="sm-card p-8 text-center text-sm text-(--color-ink-soft)">No submissions yet.</div>}
+                        {submissions.length === 0 && (
+                              <div className="sm-card p-8 text-center text-sm text-(--color-ink-soft)">No submissions yet.</div>
+                        )}
                   </div>
 
                   <div className="mt-6">
