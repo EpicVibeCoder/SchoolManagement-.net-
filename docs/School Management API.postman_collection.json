@@ -1151,10 +1151,60 @@
       ]
     },
     {
-      "name": "Teacher Assignments (Admin)",
+      "name": "Teacher Assignments",
       "item": [
         {
-          "name": "List Teacher Assignments",
+          "name": "List My Teaching Assignments (Teacher)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/teacher-assignments/mine",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "teacher-assignments",
+                "mine"
+              ]
+            },
+            "description": "Returns class\u2194subject mappings for the authenticated teacher (from JWT). Use for assignment-creation dropdowns.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
+                  "const data = pm.response.json();",
+                  "pm.test('returns array', () => pm.expect(data).to.be.an('array'));",
+                  "if (data.length) {",
+                  "  pm.test('has mapping fields', () => {",
+                  "    pm.expect(data[0]).to.include.keys('id', 'teacherId', 'classId', 'className', 'subjectId', 'subjectName');",
+                  "  });",
+                  "  if (data[0].id) pm.collectionVariables.set('teacherAssignmentId', data[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Teacher Assignments (Admin)",
           "request": {
             "method": "GET",
             "header": [],
@@ -1208,7 +1258,7 @@
           ]
         },
         {
-          "name": "Create Teacher Assignment",
+          "name": "Create Teacher Assignment (Admin)",
           "request": {
             "method": "POST",
             "header": [
@@ -1268,7 +1318,7 @@
           ]
         },
         {
-          "name": "Delete Teacher Assignment",
+          "name": "Delete Teacher Assignment (Admin)",
           "request": {
             "method": "DELETE",
             "header": [],

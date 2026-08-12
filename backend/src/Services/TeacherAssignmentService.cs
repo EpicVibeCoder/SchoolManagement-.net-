@@ -1,3 +1,4 @@
+using backend.Auth;
 using backend.Data;
 using backend.Domain.Entities;
 using backend.Domain.Enums;
@@ -10,6 +11,7 @@ namespace backend.Services;
 public interface ITeacherAssignmentService
 {
     Task<List<TeacherAssignmentDto>> ListAsync(Guid? teacherId, Guid? classId, CancellationToken ct);
+    Task<List<TeacherAssignmentDto>> ListMineAsync(CancellationToken ct); 
     Task<TeacherAssignmentDto> CreateAsync(CreateTeacherAssignmentRequest request, CancellationToken ct);
     Task DeleteAsync(Guid id, CancellationToken ct);
 }
@@ -17,8 +19,13 @@ public interface ITeacherAssignmentService
 public class TeacherAssignmentService : ITeacherAssignmentService
 {
     private readonly AppDbContext _db;
+    private readonly ICurrentUser _currentUser;
 
-    public TeacherAssignmentService(AppDbContext db) => _db = db;
+    public TeacherAssignmentService(AppDbContext db, ICurrentUser currentUser)
+    {
+        _db = db;
+        _currentUser = currentUser;
+    }
 
     public async Task<List<TeacherAssignmentDto>> ListAsync(Guid? teacherId, Guid? classId, CancellationToken ct)
     {
@@ -30,6 +37,20 @@ public class TeacherAssignmentService : ITeacherAssignmentService
             query = query.Where(t => t.ClassId == classId.Value);
 
         return await query.OrderBy(t => t.Teacher.FullName).Select(t => new TeacherAssignmentDto(t.Id, t.TeacherId, t.Teacher.FullName, t.ClassId, t.Class.Name, t.SubjectId, t.Subject.Name)).ToListAsync(ct);
+    }
+
+    public async Task<List<TeacherAssignmentDto>> ListMineAsync(CancellationToken ct)
+    {
+        var teacherId = _currentUser.UserId;
+        return await _db
+            .TeacherAssignments.Where(t => t.TeacherId == teacherId)
+            .Include(t => t.Teacher)
+            .Include(t => t.Class)
+            .Include(t => t.Subject)
+            .OrderBy(t => t.Class.Name)
+            .ThenBy(t => t.Subject.Name)
+            .Select(t => new TeacherAssignmentDto(t.Id, t.TeacherId, t.Teacher.FullName, t.ClassId, t.Class.Name, t.SubjectId, t.Subject.Name))
+            .ToListAsync(ct);
     }
 
     public async Task<TeacherAssignmentDto> CreateAsync(CreateTeacherAssignmentRequest request, CancellationToken ct)
