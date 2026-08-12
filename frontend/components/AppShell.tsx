@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { get, UserRole, userRoleLabels } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { queryKeys } from "@/lib/query-keys";
 
 interface NavLink {
       href: string;
@@ -37,21 +39,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       const { user, logout } = useAuth();
       const pathname = usePathname();
       const router = useRouter();
-      const [unreadCount, setUnreadCount] = useState(0);
       const [menuOpen, setMenuOpen] = useState(false);
 
-      useEffect(() => {
-            if (!user) return;
-            let cancelled = false;
-            get<number>("/api/notifications/unread-count")
-                  .then((count) => {
-                        if (!cancelled) setUnreadCount(count);
-                  })
-                  .catch(() => {});
-            return () => {
-                  cancelled = true;
-            };
-      }, [user, pathname]);
+      const unreadQuery = useQuery({
+            queryKey: [...queryKeys.notificationsUnread, pathname],
+            queryFn: () => get<number>("/api/notifications/unread-count"),
+            enabled: !!user,
+      });
+      const unreadCount = unreadQuery.data ?? 0;
 
       const links = user ? (NAV_LINKS[user.role] ?? []) : [];
 
@@ -66,7 +61,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
                               <div className="flex items-center gap-6">
                                     <Link href={user ? "/" : "/login"} className="flex items-baseline gap-2">
-                                          <span className="text-lg font-semibold text-(--color-primary-dark)" style={{ fontFamily: "var(--font-serif)" }}>
+                                          <span
+                                                className="text-lg font-semibold text-(--color-primary-dark)"
+                                                style={{ fontFamily: "var(--font-serif)" }}
+                                          >
                                                 School Management
                                           </span>
                                     </Link>
@@ -79,7 +77,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                                             key={link.href}
                                                             href={link.href}
                                                             className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                                                                  active ? "bg-primary text-(--color-on-primary)" : "text-(--color-ink-soft) hover:bg-(--color-bg-soft) hover:text-(--color-primary-dark)"
+                                                                  active
+                                                                        ? "bg-primary text-(--color-on-primary)"
+                                                                        : "text-(--color-ink-soft) hover:bg-(--color-bg-soft) hover:text-(--color-primary-dark)"
                                                             }`}
                                                       >
                                                             {link.label}
@@ -112,7 +112,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                           Log out
                                     </button>
 
-                                    <button type="button" className="flex h-9 w-9 items-center justify-center rounded-md border border-(--color-border) lg:hidden" onClick={() => setMenuOpen((v) => !v)} aria-label="Toggle menu">
+                                    <button
+                                          type="button"
+                                          className="flex h-9 w-9 items-center justify-center rounded-md border border-(--color-border) lg:hidden"
+                                          onClick={() => setMenuOpen((v) => !v)}
+                                          aria-label="Toggle menu"
+                                    >
                                           <MenuIcon />
                                     </button>
                               </div>
@@ -131,14 +136,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                                             href={link.href}
                                                             onClick={() => setMenuOpen(false)}
                                                             className={`rounded-md px-3 py-2 text-sm font-medium transition ${
-                                                                  active ? "bg-primary text-(--color-on-primary)" : "text-(--color-ink-soft) hover:bg-(--color-bg-soft)"
+                                                                  active
+                                                                        ? "bg-primary text-(--color-on-primary)"
+                                                                        : "text-(--color-ink-soft) hover:bg-(--color-bg-soft)"
                                                             }`}
                                                       >
                                                             {link.label}
                                                       </Link>
                                                 );
                                           })}
-                                          <button type="button" onClick={handleLogout} className="mt-1 rounded-md px-3 py-2 text-left text-sm font-medium text-(--color-danger) hover:bg-(--color-danger-bg)">
+                                          <button
+                                                type="button"
+                                                onClick={handleLogout}
+                                                className="mt-1 rounded-md px-3 py-2 text-left text-sm font-medium text-(--color-danger) hover:bg-(--color-danger-bg)"
+                                          >
                                                 Log out
                                           </button>
                                     </div>

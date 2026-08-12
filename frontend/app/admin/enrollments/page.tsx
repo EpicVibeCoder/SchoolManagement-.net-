@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,6 +8,8 @@ import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, ClassDto, EnrollmentDto, PagedResult, UserDto, UserRole, del, get, post } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
 const enrollmentSchema = z.object({
       studentId: z.string().min(1, "Student is required"),
@@ -17,15 +19,39 @@ const enrollmentSchema = z.object({
 type EnrollmentFormValues = z.infer<typeof enrollmentSchema>;
 
 export default function EnrollmentsPage() {
-      const [enrollments, setEnrollments] = useState<EnrollmentDto[]>([]);
-      const [students, setStudents] = useState<UserDto[]>([]);
-      const [classes, setClasses] = useState<ClassDto[]>([]);
+      const queryClient = useQueryClient();
       const [classFilter, setClassFilter] = useState("");
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
       const [formError, setFormError] = useState<string | null>(null);
+      const [actionError, setActionError] = useState<string | null>(null);
       const [submitting, setSubmitting] = useState(false);
       const [busyId, setBusyId] = useState<string | null>(null);
+
+      const studentsQuery = useQuery({
+            queryKey: queryKeys.users("", UserRole.Student),
+            queryFn: () => get<PagedResult<UserDto>>(`/api/users?role=${UserRole.Student}&pageSize=200`),
+      });
+      const classesQuery = useQuery({
+            queryKey: queryKeys.classes,
+            queryFn: () => get<ClassDto[]>("/api/classes"),
+      });
+      const enrollmentsQuery = useQuery({
+            queryKey: queryKeys.enrollments(classFilter || undefined),
+            queryFn: () => {
+                  const query = classFilter ? `?classId=${classFilter}` : "";
+                  return get<EnrollmentDto[]>(`/api/enrollments${query}`);
+            },
+      });
+
+      const students = studentsQuery.data?.items ?? [];
+      const classes = classesQuery.data ?? [];
+      const enrollments = enrollmentsQuery.data ?? [];
+      const loading = enrollmentsQuery.isPending;
+      const error =
+            enrollmentsQuery.error instanceof ApiError
+                  ? enrollmentsQuery.error.message
+                  : enrollmentsQuery.error
+                    ? "Failed to load enrollments."
+                    : null;
 
       const {
             register,
@@ -37,42 +63,13 @@ export default function EnrollmentsPage() {
             defaultValues: { studentId: "", classId: "" },
       });
 
-      const loadReferenceData = async () => {
-            const [studentsData, classesData] = await Promise.all([get<PagedResult<UserDto>>(`/api/users?role=${UserRole.Student}&pageSize=200`), get<ClassDto[]>("/api/classes")]);
-            setStudents(studentsData.items);
-            setClasses(classesData);
-      };
-
-      const loadEnrollments = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                  const query = classFilter ? `?classId=${classFilter}` : "";
-                  const data = await get<EnrollmentDto[]>(`/api/enrollments${query}`);
-                  setEnrollments(data);
-            } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to load enrollments.");
-            } finally {
-                  setLoading(false);
-            }
-      };
-
-      useEffect(() => {
-            loadReferenceData();
-      }, []);
-
-      useEffect(() => {
-            loadEnrollments();
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [classFilter]);
-
       const onSubmit = async (values: EnrollmentFormValues) => {
             setFormError(null);
             setSubmitting(true);
             try {
                   await post<EnrollmentDto>("/api/enrollments", values);
                   reset({ studentId: "", classId: "" });
-                  await loadEnrollments();
+                  await queryClient.invalidateQueries({ queryKey: ["enrollments"] });
             } catch (err) {
                   setFormError(err instanceof ApiError ? err.message : "Failed to enroll student.");
             } finally {
@@ -82,11 +79,12 @@ export default function EnrollmentsPage() {
 
       const remove = async (id: string) => {
             setBusyId(id);
+            setActionError(null);
             try {
                   await del(`/api/enrollments/${id}`);
-                  await loadEnrollments();
+                  await queryClient.invalidateQueries({ queryKey: ["enrollments"] });
             } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to remove enrollment.");
+                  setActionError(err instanceof ApiError ? err.message : "Failed to remove enrollment.");
             } finally {
                   setBusyId(null);
             }
@@ -148,7 +146,7 @@ export default function EnrollmentsPage() {
                               </div>
 
                               {loading && <LoadingBlock label="Loading enrollments…" />}
-                              {error && <ErrorBlock message={error} />}
+                              {(error || actionError) && <ErrorBlock message={error ?? actionError!} />}
 
                               {!loading && (
                                     <div className="sm-card overflow-x-auto">
@@ -164,12 +162,19 @@ export default function EnrollmentsPage() {
                                                 <tbody>
                                                       {enrollments.map((enrollment) => (
                                                             <tr key={enrollment.id}>
-                                                                  <td className="font-medium text-(--color-primary-dark)">{enrollment.studentName}</td>
+                                                                  <td className="font-medium text-(--color-primary-dark)">
+                                                                        {enrollment.studentName}
+                                                                  </td>
                                                                   <td>{enrollment.className}</td>
                                                                   <td>{formatDate(enrollment.enrolledAt)}</td>
                                                                   <td>
                                                                         <div className="flex justify-end">
-                                                                              <button type="button" className="sm-btn sm-btn-danger" disabled={busyId === enrollment.id} onClick={() => remove(enrollment.id)}>
+                                                                              <button
+                                                                                    type="button"
+                                                                                    className="sm-btn sm-btn-danger"
+                                                                                    disabled={busyId === enrollment.id}
+                                                                                    onClick={() => remove(enrollment.id)}
+                                                                              >
                                                                                     Remove
                                                                               </button>
                                                                         </div>

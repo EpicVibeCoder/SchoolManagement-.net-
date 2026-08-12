@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import { AssignmentStatusBadge } from "@/components/Badge";
@@ -22,20 +21,25 @@ export default function TeacherDashboardPage() {
             queryFn: () => get<AssignmentDto[]>("/api/assignments"),
             enabled: !!user?.id,
       });
-      const upcoming = useMemo(() => {
-            if (!assignmentsQuery.data || !user?.id) return [];
-            return assignmentsQuery.data
-                  .filter((a) => a.createdByTeacherId === user.id)
-                  .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-                  .slice(0, 5);
-      }, [assignmentsQuery.data, user?.id]);
+      const teacherId = user?.id;
+      const data = assignmentsQuery.data;
+      const upcoming =
+            !data || !teacherId
+                  ? []
+                  : data
+                          .filter((a) => a.createdByTeacherId === teacherId)
+                          .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+                          .slice(0, 5);
       const loading = dashboardQuery.isPending || assignmentsQuery.isPending;
       const error =
-            dashboardQuery.error instanceof ApiError ? dashboardQuery.error.message : assignmentsQuery.error instanceof ApiError ? assignmentsQuery.error.message : dashboardQuery.error || assignmentsQuery.error ? "Failed to load dashboard." : null;
+            dashboardQuery.error instanceof ApiError
+                  ? dashboardQuery.error.message
+                  : assignmentsQuery.error instanceof ApiError
+                    ? assignmentsQuery.error.message
+                    : dashboardQuery.error || assignmentsQuery.error
+                      ? "Failed to load dashboard."
+                      : null;
       const stats = dashboardQuery.data;
-      
-
-     
 
       return (
             <div>
@@ -97,7 +101,10 @@ export default function TeacherDashboardPage() {
                                           {upcoming.map((a) => (
                                                 <tr key={a.id}>
                                                       <td>
-                                                            <Link href={`/teacher/assignments/${a.id}`} className="font-medium text-(--color-primary-dark) hover:underline">
+                                                            <Link
+                                                                  href={`/teacher/assignments/${a.id}`}
+                                                                  className="font-medium text-(--color-primary-dark) hover:underline"
+                                                            >
                                                                   {a.title}
                                                             </Link>
                                                       </td>

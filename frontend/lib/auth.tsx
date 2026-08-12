@@ -41,8 +41,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }, []);
 
       useEffect(() => {
-            refresh();
-            // eslint-disable-next-line react-hooks/exhaustive-deps
+            let cancelled = false;
+            (async () => {
+                  const existing = getToken();
+                  if (!existing) {
+                        if (!cancelled) setLoading(false);
+                        return;
+                  }
+                  if (!cancelled) setTokenState(existing);
+                  try {
+                        const profile = await apiMe();
+                        if (!cancelled) setUser(profile);
+                  } catch {
+                        clearToken();
+                        if (!cancelled) {
+                              setUser(null);
+                              setTokenState(null);
+                        }
+                  } finally {
+                        if (!cancelled) setLoading(false);
+                  }
+            })();
+            return () => {
+                  cancelled = true;
+            };
       }, []);
 
       const login = useCallback(async (email: string, password: string) => {

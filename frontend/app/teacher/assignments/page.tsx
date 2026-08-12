@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AssignmentStatusBadge } from "@/components/Badge";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
-import { ApiError, AssignmentDto, AssignmentStatus, TeacherAssignmentDto, del, get, post, put } from "@/lib/api";
+import { ApiError, AssignmentDto, AssignmentStatus, del, get, post } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,7 +34,7 @@ export default function TeacherAssignmentsPage() {
             queryFn: () => get<AssignmentDto[]>("/api/assignments"),
             enabled: !!user?.id,
       });
-      
+
       const assignments = useMemo(
             () => (assignmentsQuery.data ?? []).filter((a) => a.createdByTeacherId === user?.id),
             [assignmentsQuery.data, user?.id],
@@ -71,14 +71,14 @@ export default function TeacherAssignmentsPage() {
       const {
             register,
             handleSubmit,
-            watch,
+            control,
             reset,
             formState: { errors },
       } = useForm<AssignmentFormInput, unknown, AssignmentFormValues>({
             resolver: zodResolver(assignmentSchema),
             defaultValues: { title: "", description: "", deadline: "", maxMarks: 100, classId: "", subjectId: "" },
       });
-      const selectedClassId = watch("classId");
+      const selectedClassId = useWatch({ control, name: "classId" });
       const classes = useMemo(() => {
             const map = new Map<string, string>();
             teachingAssignments.forEach((t) => map.set(t.classId, t.className));

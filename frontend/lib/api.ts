@@ -289,7 +289,9 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
       const payload = isJson ? await res.json().catch(() => null) : null;
 
       if (!res.ok) {
-            const message = (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string" ? payload.message : null) ?? `Request failed with status ${res.status}`;
+            const message =
+                  (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string" ? payload.message : null) ??
+                  `Request failed with status ${res.status}`;
             const code = payload && typeof payload === "object" && "code" in payload && typeof payload.code === "string" ? payload.code : undefined;
             const details = payload && typeof payload === "object" && "details" in payload ? payload.details : undefined;
             throw new ApiError(message, res.status, code, details);

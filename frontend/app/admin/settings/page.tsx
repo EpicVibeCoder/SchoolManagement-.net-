@@ -1,47 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AppSettingDto, get, put } from "@/lib/api";
+import { queryKeys } from "@/lib/query-keys";
 
 const ALLOW_LATE_KEY = "AllowLateSubmissions";
 
 export default function AdminSettingsPage() {
-      const [settings, setSettings] = useState<AppSettingDto[]>([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
+      const queryClient = useQueryClient();
+      const {
+            data: settings = [],
+            isPending: loading,
+            error,
+      } = useQuery({
+            queryKey: queryKeys.settings,
+            queryFn: () => get<AppSettingDto[]>("/api/settings"),
+      });
+      const [actionError, setActionError] = useState<string | null>(null);
       const [saving, setSaving] = useState(false);
 
-      const load = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                  const data = await get<AppSettingDto[]>("/api/settings");
-                  setSettings(data);
-            } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to load settings.");
-            } finally {
-                  setLoading(false);
-            }
-      };
-
-      useEffect(() => {
-            load();
-      }, []);
+      const errorMessage = error instanceof ApiError ? error.message : error ? "Failed to load settings." : null;
+      const displayError = errorMessage ?? actionError;
 
       const allowLate = settings.find((s) => s.key === ALLOW_LATE_KEY);
       const isAllowed = allowLate?.value?.toLowerCase() === "true";
 
       const toggleAllowLate = async () => {
             setSaving(true);
-            setError(null);
+            setActionError(null);
             try {
                   const nextValue = (!isAllowed).toString();
                   await put<AppSettingDto>(`/api/settings/${ALLOW_LATE_KEY}`, { value: nextValue });
-                  await load();
+                  await queryClient.invalidateQueries({ queryKey: queryKeys.settings });
             } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to update setting.");
+                  setActionError(err instanceof ApiError ? err.message : "Failed to update setting.");
             } finally {
                   setSaving(false);
             }
@@ -52,14 +47,16 @@ export default function AdminSettingsPage() {
                   <PageHeader title="Settings" description="System-wide configuration for the school." />
 
                   {loading && <LoadingBlock label="Loading settings…" />}
-                  {error && <ErrorBlock message={error} />}
+                  {displayError && <ErrorBlock message={displayError} />}
 
                   {!loading && (
                         <div className="sm-card max-w-xl p-6">
                               <div className="flex items-start justify-between gap-4">
                                     <div>
                                           <h2 className="text-base font-semibold text-(--color-primary-dark)">Allow late submissions</h2>
-                                          <p className="mt-1 text-sm text-(--color-ink-soft)">When enabled, students can submit assignment answers after the deadline has passed.</p>
+                                          <p className="mt-1 text-sm text-(--color-ink-soft)">
+                                                When enabled, students can submit assignment answers after the deadline has passed.
+                                          </p>
                                     </div>
                                     <button
                                           type="button"
@@ -69,7 +66,9 @@ export default function AdminSettingsPage() {
                                           disabled={saving}
                                           className={`relative h-7 w-12 shrink-0 rounded-full transition ${isAllowed ? "bg-(--color-primary)" : "bg-(--color-border-strong)"} disabled:opacity-60`}
                                     >
-                                          <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${isAllowed ? "left-6" : "left-1"}`} />
+                                          <span
+                                                className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${isAllowed ? "left-6" : "left-1"}`}
+                                          />
                                     </button>
                               </div>
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, DashboardStatsDto, get } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { queryKeys } from "@/lib/query-keys";
 
 const STAT_CARDS: { key: keyof DashboardStatsDto; label: string; href: string }[] = [
       { key: "users", label: "Users", href: "/admin/users" },
@@ -18,39 +19,35 @@ const STAT_CARDS: { key: keyof DashboardStatsDto; label: string; href: string }[
 
 export default function AdminDashboardPage() {
       const { user } = useAuth();
-      const [stats, setStats] = useState<DashboardStatsDto | null>(null);
-      const [error, setError] = useState<string | null>(null);
-      const [loading, setLoading] = useState(true);
-
-      useEffect(() => {
-            let cancelled = false;
-            get<DashboardStatsDto>("/api/dashboard")
-                  .then((data) => {
-                        if (!cancelled) setStats(data);
-                  })
-                  .catch((err) => {
-                        if (!cancelled) setError(err instanceof ApiError ? err.message : "Failed to load dashboard.");
-                  })
-                  .finally(() => {
-                        if (!cancelled) setLoading(false);
-                  });
-            return () => {
-                  cancelled = true;
-            };
-      }, []);
+      const {
+            data: stats,
+            isPending: loading,
+            error,
+      } = useQuery({
+            queryKey: queryKeys.dashboard,
+            queryFn: () => get<DashboardStatsDto>("/api/dashboard"),
+      });
+      const errorMessage = error instanceof ApiError ? error.message : error ? "Failed to load dashboard." : null;
 
       return (
             <div>
                   <PageHeader title="Admin Dashboard" description={`Welcome back, ${user?.fullName ?? ""}.`} />
 
                   {loading && <LoadingBlock label="Loading dashboard…" />}
-                  {error && <ErrorBlock message={error} />}
+                  {errorMessage && <ErrorBlock message={errorMessage} />}
 
                   {stats && (
                         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
                               {STAT_CARDS.map((card) => (
-                                    <Link key={card.key} href={card.href} className="sm-card block p-4 transition hover:border-(--color-primary-soft)">
-                                          <p className="text-3xl font-semibold text-(--color-primary-dark)" style={{ fontFamily: "var(--font-serif)" }}>
+                                    <Link
+                                          key={card.key}
+                                          href={card.href}
+                                          className="sm-card block p-4 transition hover:border-(--color-primary-soft)"
+                                    >
+                                          <p
+                                                className="text-3xl font-semibold text-(--color-primary-dark)"
+                                                style={{ fontFamily: "var(--font-serif)" }}
+                                          >
                                                 {stats[card.key]}
                                           </p>
                                           <p className="mt-1 text-xs font-medium uppercase tracking-wide text-(--color-ink-soft)">{card.label}</p>

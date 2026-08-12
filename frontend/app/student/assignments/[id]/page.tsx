@@ -1,47 +1,50 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {  useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AssignmentStatusBadge, SubmissionStatusBadge } from "@/components/Badge";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AssignmentDto, SubmissionDto, get, post, put } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
 export default function StudentAssignmentDetailPage() {
       const params = useParams<{ id: string }>();
       const router = useRouter();
+      const queryClient = useQueryClient();
       const assignmentId = params.id;
 
-      const [assignment, setAssignment] = useState<AssignmentDto | null>(null);
-      const [submission, setSubmission] = useState<SubmissionDto | null>(null);
-      const [answer, setAnswer] = useState("");
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
+      const [draft, setDraft] = useState<string | null>(null);
       const [formError, setFormError] = useState<string | null>(null);
       const [success, setSuccess] = useState<string | null>(null);
       const [submitting, setSubmitting] = useState(false);
+      const [now] = useState(() => Date.now());
 
-      const load = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                  const [assignmentData, mineData] = await Promise.all([get<AssignmentDto>(`/api/assignments/${assignmentId}`), get<SubmissionDto[]>("/api/submissions/mine")]);
-                  setAssignment(assignmentData);
-                  const existing = mineData.find((s) => s.assignmentId === assignmentId) ?? null;
-                  setSubmission(existing);
-                  setAnswer(existing?.answer ?? "");
-            } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to load assignment.");
-            } finally {
-                  setLoading(false);
-            }
-      };
+      const assignmentQuery = useQuery({
+            queryKey: queryKeys.assignment(assignmentId),
+            queryFn: () => get<AssignmentDto>(`/api/assignments/${assignmentId}`),
+            enabled: !!assignmentId,
+      });
+      const mySubmissionsQuery = useQuery({
+            queryKey: queryKeys.mySubmissions,
+            queryFn: () => get<SubmissionDto[]>("/api/submissions/mine"),
+      });
 
-      useEffect(() => {
-            load();
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [assignmentId]);
+      const assignment = assignmentQuery.data ?? null;
+      const submission = mySubmissionsQuery.data?.find((s) => s.assignmentId === assignmentId) ?? null;
+      const answer = draft ?? submission?.answer ?? "";
+
+      const loading = assignmentQuery.isPending || mySubmissionsQuery.isPending;
+      const error =
+            assignmentQuery.error instanceof ApiError
+                  ? assignmentQuery.error.message
+                  : mySubmissionsQuery.error instanceof ApiError
+                    ? mySubmissionsQuery.error.message
+                    : assignmentQuery.error || mySubmissionsQuery.error
+                      ? "Failed to load assignment."
+                      : null;
 
       const onSubmit = async () => {
             if (!answer.trim()) {
@@ -59,7 +62,13 @@ export default function StudentAssignmentDetailPage() {
                         await post("/api/submissions", { assignmentId, answer });
                         setSuccess("Your answer has been submitted.");
                   }
-                  await load();
+                  await Promise.all([
+                        queryClient.invalidateQueries({ queryKey: queryKeys.assignment(assignmentId) }),
+                        queryClient.invalidateQueries({ queryKey: queryKeys.mySubmissions }),
+                        queryClient.invalidateQueries({ queryKey: queryKeys.assignments }),
+                        queryClient.invalidateQueries({ queryKey: queryKeys.dashboard }),
+                  ]);
+                  setDraft(null);
             } catch (err) {
                   setFormError(err instanceof ApiError ? err.message : "Failed to submit your answer.");
             } finally {
@@ -71,16 +80,24 @@ export default function StudentAssignmentDetailPage() {
       if (error) return <ErrorBlock message={error} />;
       if (!assignment) return <ErrorBlock message="Assignment not found." />;
 
-      const isPastDeadline = new Date(assignment.deadline).getTime() < Date.now();
+      const isPastDeadline = new Date(assignment.deadline).getTime() < now;
       const isGraded = submission?.marks !== null && submission?.marks !== undefined;
 
       return (
             <div>
-                  <button type="button" onClick={() => router.push("/student/assignments")} className="mb-4 text-sm text-(--color-ink-soft) hover:underline">
+                  <button
+                        type="button"
+                        onClick={() => router.push("/student/assignments")}
+                        className="mb-4 text-sm text-(--color-ink-soft) hover:underline"
+                  >
                         ← Back to assignments
                   </button>
 
-                  <PageHeader title={assignment.title} description={`${assignment.className} · ${assignment.subjectName} · Due ${formatDateTime(assignment.deadline)}`} actions={<AssignmentStatusBadge status={assignment.status} />} />
+                  <PageHeader
+                        title={assignment.title}
+                        description={`${assignment.className} · ${assignment.subjectName} · Due ${formatDateTime(assignment.deadline)}`}
+                        actions={<AssignmentStatusBadge status={assignment.status} />}
+                  />
 
                   <div className="sm-card mb-6 p-5">
                         <p className="text-sm text-(--color-ink-soft)">Description</p>
@@ -121,7 +138,13 @@ export default function StudentAssignmentDetailPage() {
                         {formError && <div className="sm-alert sm-alert-danger mt-3">{formError}</div>}
                         {success && <div className="sm-alert sm-alert-success mt-3">{success}</div>}
 
-                        <textarea rows={8} className="sm-input mt-3" placeholder="Write your answer here…" value={answer} onChange={(e) => setAnswer(e.target.value)} />
+                        <textarea
+                              rows={8}
+                              className="sm-input mt-3"
+                              placeholder="Write your answer here…"
+                              value={answer}
+                              onChange={(e) => setDraft(e.target.value)}
+                        />
 
                         <div className="mt-3 flex justify-end">
                               <button type="button" className="sm-btn sm-btn-primary" disabled={submitting} onClick={onSubmit}>
@@ -129,7 +152,9 @@ export default function StudentAssignmentDetailPage() {
                               </button>
                         </div>
 
-                        {submission && <p className="mt-2 text-xs text-(--color-ink-soft)">Last submitted {formatDateTime(submission.submittedAt)}</p>}
+                        {submission && (
+                              <p className="mt-2 text-xs text-(--color-ink-soft)">Last submitted {formatDateTime(submission.submittedAt)}</p>
+                        )}
                   </div>
             </div>
       );

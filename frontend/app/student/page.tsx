@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { AssignmentStatusBadge, SubmissionStatusBadge } from "@/components/Badge";
 import PageHeader from "@/components/PageHeader";
@@ -8,34 +8,46 @@ import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AssignmentDto, DashboardStatsDto, SubmissionDto, get } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
 export default function StudentDashboardPage() {
       const { user } = useAuth();
-      const [stats, setStats] = useState<DashboardStatsDto | null>(null);
-      const [assignments, setAssignments] = useState<AssignmentDto[]>([]);
-      const [mySubmissions, setMySubmissions] = useState<SubmissionDto[]>([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
+      const dashboardQuery = useQuery({
+            queryKey: queryKeys.dashboard,
+            queryFn: () => get<DashboardStatsDto>("/api/dashboard"),
+      });
+      const assignmentsQuery = useQuery({
+            queryKey: queryKeys.assignments,
+            queryFn: () => get<AssignmentDto[]>("/api/assignments"),
+      });
+      const mySubmissionsQuery = useQuery({
+            queryKey: queryKeys.mySubmissions,
+            queryFn: () => get<SubmissionDto[]>("/api/submissions/mine"),
+      });
 
-      useEffect(() => {
-            let cancelled = false;
-            Promise.all([get<DashboardStatsDto>("/api/dashboard"), get<AssignmentDto[]>("/api/assignments"), get<SubmissionDto[]>("/api/submissions/mine")])
-                  .then(([statsData, assignmentsData, submissionsData]) => {
-                        if (cancelled) return;
-                        setStats(statsData);
-                        setAssignments(assignmentsData.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()).slice(0, 5));
-                        setMySubmissions(submissionsData.slice(0, 5));
-                  })
-                  .catch((err) => {
-                        if (!cancelled) setError(err instanceof ApiError ? err.message : "Failed to load dashboard.");
-                  })
-                  .finally(() => {
-                        if (!cancelled) setLoading(false);
-                  });
-            return () => {
-                  cancelled = true;
-            };
-      }, []);
+      const upcoming = useMemo(() => {
+            if (!assignmentsQuery.data) return [];
+            return [...assignmentsQuery.data].sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()).slice(0, 5);
+      }, [assignmentsQuery.data]);
+
+      const recentSubmissions = useMemo(() => {
+            if (!mySubmissionsQuery.data) return [];
+            return mySubmissionsQuery.data.slice(0, 5);
+      }, [mySubmissionsQuery.data]);
+
+      const loading = dashboardQuery.isPending || assignmentsQuery.isPending || mySubmissionsQuery.isPending;
+      const error =
+            dashboardQuery.error instanceof ApiError
+                  ? dashboardQuery.error.message
+                  : assignmentsQuery.error instanceof ApiError
+                    ? assignmentsQuery.error.message
+                    : mySubmissionsQuery.error instanceof ApiError
+                      ? mySubmissionsQuery.error.message
+                      : dashboardQuery.error || assignmentsQuery.error || mySubmissionsQuery.error
+                        ? "Failed to load dashboard."
+                        : null;
+      const stats = dashboardQuery.data;
 
       return (
             <div>
@@ -62,7 +74,7 @@ export default function StudentDashboardPage() {
                               </div>
                               <div className="sm-card p-4">
                                     <p className="text-3xl font-semibold text-(--color-primary-dark)" style={{ fontFamily: "var(--font-serif)" }}>
-                                          {mySubmissions.length}
+                                          {recentSubmissions.length}
                                     </p>
                                     <p className="mt-1 text-xs font-medium uppercase tracking-wide text-(--color-ink-soft)">My Submissions</p>
                               </div>
@@ -88,10 +100,13 @@ export default function StudentDashboardPage() {
                                                 </tr>
                                           </thead>
                                           <tbody>
-                                                {assignments.map((a) => (
+                                                {upcoming.map((a) => (
                                                       <tr key={a.id}>
                                                             <td>
-                                                                  <Link href={`/student/assignments/${a.id}`} className="font-medium text-(--color-primary-dark) hover:underline">
+                                                                  <Link
+                                                                        href={`/student/assignments/${a.id}`}
+                                                                        className="font-medium text-(--color-primary-dark) hover:underline"
+                                                                  >
                                                                         {a.title}
                                                                   </Link>
                                                             </td>
@@ -101,7 +116,7 @@ export default function StudentDashboardPage() {
                                                             </td>
                                                       </tr>
                                                 ))}
-                                                {assignments.length === 0 && !loading && (
+                                                {upcoming.length === 0 && !loading && (
                                                       <tr>
                                                             <td colSpan={3} className="text-center text-(--color-ink-soft)">
                                                                   No assignments yet.
@@ -125,7 +140,7 @@ export default function StudentDashboardPage() {
                                                 </tr>
                                           </thead>
                                           <tbody>
-                                                {mySubmissions.map((s) => (
+                                                {recentSubmissions.map((s) => (
                                                       <tr key={s.id}>
                                                             <td className="font-medium text-(--color-primary-dark)">{s.assignmentTitle}</td>
                                                             <td>
@@ -134,7 +149,7 @@ export default function StudentDashboardPage() {
                                                             <td>{s.marks !== null ? `${s.marks} / ${s.maxMarks}` : "—"}</td>
                                                       </tr>
                                                 ))}
-                                                {mySubmissions.length === 0 && !loading && (
+                                                {recentSubmissions.length === 0 && !loading && (
                                                       <tr>
                                                             <td colSpan={3} className="text-center text-(--color-ink-soft)">
                                                                   No submissions yet.

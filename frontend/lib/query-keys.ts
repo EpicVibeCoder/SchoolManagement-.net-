@@ -7,7 +7,10 @@ export const queryKeys = {
       assignments: ["assignments"] as const,
       assignment: (id: string) => ["assignments", id] as const,
       submissions: (assignmentId: string) => ["submissions", { assignmentId }] as const,
+      allSubmissions: ["submissions", "all"] as const,
       mySubmissions: ["submissions", "mine"] as const,
       dashboard: ["dashboard"] as const,
+      settings: ["settings"] as const,
+      notifications: ["notifications"] as const,
       notificationsUnread: ["notifications", "unread-count"] as const,
 };

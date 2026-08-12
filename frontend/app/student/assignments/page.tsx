@@ -1,46 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { AssignmentStatusBadge } from "@/components/Badge";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AssignmentDto, get } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
+import { queryKeys } from "@/lib/query-keys";
 
 export default function StudentAssignmentsPage() {
-      const [assignments, setAssignments] = useState<AssignmentDto[]>([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
-
-      useEffect(() => {
-            let cancelled = false;
-            get<AssignmentDto[]>("/api/assignments")
-                  .then((data) => {
-                        if (!cancelled) setAssignments(data);
-                  })
-                  .catch((err) => {
-                        if (!cancelled) setError(err instanceof ApiError ? err.message : "Failed to load assignments.");
-                  })
-                  .finally(() => {
-                        if (!cancelled) setLoading(false);
-                  });
-            return () => {
-                  cancelled = true;
-            };
-      }, []);
+      const {
+            data: assignments = [],
+            isPending: loading,
+            error,
+      } = useQuery({
+            queryKey: queryKeys.assignments,
+            queryFn: () => get<AssignmentDto[]>("/api/assignments"),
+      });
+      const errorMessage = error instanceof ApiError ? error.message : error ? "Failed to load assignments." : null;
 
       return (
             <div>
                   <PageHeader title="Assignments" description="Published assignments for your enrolled classes." />
 
                   {loading && <LoadingBlock label="Loading assignments…" />}
-                  {error && <ErrorBlock message={error} />}
+                  {errorMessage && <ErrorBlock message={errorMessage} />}
 
-                  {!loading && !error && (
+                  {!loading && !errorMessage && (
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                               {assignments.map((a) => (
-                                    <Link key={a.id} href={`/student/assignments/${a.id}`} className="sm-card block p-5 transition hover:border-(--color-primary-soft)">
+                                    <Link
+                                          key={a.id}
+                                          href={`/student/assignments/${a.id}`}
+                                          className="sm-card block p-5 transition hover:border-(--color-primary-soft)"
+                                    >
                                           <div className="flex items-start justify-between gap-2">
                                                 <h2 className="text-base font-semibold text-(--color-primary-dark)">{a.title}</h2>
                                                 <AssignmentStatusBadge status={a.status} />
@@ -55,7 +49,11 @@ export default function StudentAssignmentsPage() {
                                           </div>
                                     </Link>
                               ))}
-                              {assignments.length === 0 && <div className="sm-card p-8 text-center text-sm text-(--color-ink-soft) sm:col-span-2 lg:col-span-3">No assignments have been published for your classes yet.</div>}
+                              {assignments.length === 0 && (
+                                    <div className="sm-card p-8 text-center text-sm text-(--color-ink-soft) sm:col-span-2 lg:col-span-3">
+                                          No assignments have been published for your classes yet.
+                                    </div>
+                              )}
                         </div>
                   )}
             </div>

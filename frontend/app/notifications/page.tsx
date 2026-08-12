@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import PageHeader from "@/components/PageHeader";
@@ -8,14 +8,15 @@ import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, NotificationDto, get, put } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
 export default function NotificationsPage() {
       const { user, loading: authLoading } = useAuth();
       const router = useRouter();
-      const [notifications, setNotifications] = useState<NotificationDto[]>([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
+      const queryClient = useQueryClient();
       const [busyId, setBusyId] = useState<string | null>(null);
+      const [actionError, setActionError] = useState<string | null>(null);
 
       useEffect(() => {
             if (!authLoading && !user) {
@@ -23,31 +24,41 @@ export default function NotificationsPage() {
             }
       }, [authLoading, user, router]);
 
-      const load = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                  const data = await get<NotificationDto[]>("/api/notifications");
-                  setNotifications(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-            } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to load notifications.");
-            } finally {
-                  setLoading(false);
-            }
-      };
+      const notificationsQuery = useQuery({
+            queryKey: queryKeys.notifications,
+            queryFn: () => get<NotificationDto[]>("/api/notifications"),
+            enabled: !!user,
+      });
 
-      useEffect(() => {
-            if (user) load();
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [user]);
+      const notifications = useMemo(() => {
+            if (!notificationsQuery.data) return [];
+            return [...notificationsQuery.data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }, [notificationsQuery.data]);
+
+      const loading = notificationsQuery.isPending;
+      const error =
+            actionError ??
+            (notificationsQuery.error instanceof ApiError
+                  ? notificationsQuery.error.message
+                  : notificationsQuery.error
+                    ? "Failed to load notifications."
+                    : null);
+
+      const invalidateNotificationQueries = async () => {
+            await Promise.all([
+                  queryClient.invalidateQueries({ queryKey: queryKeys.notifications }),
+                  queryClient.invalidateQueries({ queryKey: queryKeys.notificationsUnread }),
+            ]);
+      };
 
       const markRead = async (id: string) => {
             setBusyId(id);
+            setActionError(null);
             try {
                   await put(`/api/notifications/${id}/read`);
-                  setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+                  await invalidateNotificationQueries();
             } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to mark notification as read.");
+                  setActionError(err instanceof ApiError ? err.message : "Failed to mark notification as read.");
             } finally {
                   setBusyId(null);
             }
@@ -57,11 +68,12 @@ export default function NotificationsPage() {
             const unread = notifications.filter((n) => !n.isRead);
             if (unread.length === 0) return;
             setBusyId("all");
+            setActionError(null);
             try {
                   await Promise.all(unread.map((n) => put(`/api/notifications/${n.id}/read`)));
-                  setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+                  await invalidateNotificationQueries();
             } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to mark all as read.");
+                  setActionError(err instanceof ApiError ? err.message : "Failed to mark all as read.");
             } finally {
                   setBusyId(null);
             }
@@ -81,7 +93,11 @@ export default function NotificationsPage() {
             <AppShell>
                   <PageHeader
                         title="Notifications"
-                        description={unreadCount > 0 ? `You have ${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}.` : "You're all caught up."}
+                        description={
+                              unreadCount > 0
+                                    ? `You have ${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}.`
+                                    : "You're all caught up."
+                        }
                         actions={
                               unreadCount > 0 ? (
                                     <button type="button" className="sm-btn sm-btn-secondary" disabled={busyId === "all"} onClick={markAllRead}>
@@ -97,7 +113,10 @@ export default function NotificationsPage() {
                   {!loading && (
                         <div className="space-y-2">
                               {notifications.map((n) => (
-                                    <div key={n.id} className={`sm-card flex items-start justify-between gap-4 p-4 ${n.isRead ? "" : "border-(--color-primary-soft)"}`}>
+                                    <div
+                                          key={n.id}
+                                          className={`sm-card flex items-start justify-between gap-4 p-4 ${n.isRead ? "" : "border-(--color-primary-soft)"}`}
+                                    >
                                           <div>
                                                 <div className="flex items-center gap-2">
                                                       {!n.isRead && <span className="h-2 w-2 rounded-full bg-(--color-accent)" />}
@@ -107,13 +126,20 @@ export default function NotificationsPage() {
                                                 <p className="mt-2 text-xs text-(--color-muted)">{formatDateTime(n.createdAt)}</p>
                                           </div>
                                           {!n.isRead && (
-                                                <button type="button" className="sm-btn sm-btn-secondary shrink-0" disabled={busyId === n.id} onClick={() => markRead(n.id)}>
+                                                <button
+                                                      type="button"
+                                                      className="sm-btn sm-btn-secondary shrink-0"
+                                                      disabled={busyId === n.id}
+                                                      onClick={() => markRead(n.id)}
+                                                >
                                                       Mark read
                                                 </button>
                                           )}
                                     </div>
                               ))}
-                              {notifications.length === 0 && <div className="sm-card p-8 text-center text-sm text-(--color-ink-soft)">No notifications yet.</div>}
+                              {notifications.length === 0 && (
+                                    <div className="sm-card p-8 text-center text-sm text-(--color-ink-soft)">No notifications yet.</div>
+                              )}
                         </div>
                   )}
             </AppShell>

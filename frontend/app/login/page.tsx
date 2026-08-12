@@ -77,7 +77,14 @@ export default function LoginPage() {
                                           <label className="sm-label" htmlFor="email">
                                                 Email
                                           </label>
-                                          <input id="email" type="email" className="sm-input" placeholder="you@school.com" autoComplete="email" {...register("email")} />
+                                          <input
+                                                id="email"
+                                                type="email"
+                                                className="sm-input"
+                                                placeholder="you@school.com"
+                                                autoComplete="email"
+                                                {...register("email")}
+                                          />
                                           {errors.email && <p className="mt-1 text-xs text-(--color-danger)">{errors.email.message}</p>}
                                     </div>
 
@@ -85,7 +92,14 @@ export default function LoginPage() {
                                           <label className="sm-label" htmlFor="password">
                                                 Password
                                           </label>
-                                          <input id="password" type="password" className="sm-input" placeholder="••••••••" autoComplete="current-password" {...register("password")} />
+                                          <input
+                                                id="password"
+                                                type="password"
+                                                className="sm-input"
+                                                placeholder="••••••••"
+                                                autoComplete="current-password"
+                                                {...register("password")}
+                                          />
                                           {errors.password && <p className="mt-1 text-xs text-(--color-danger)">{errors.password.message}</p>}
                                     </div>
 

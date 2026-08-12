@@ -211,7 +211,12 @@
                                           "listen": "test",
                                           "script": {
                                                 "type": "text/javascript",
-                                                "exec": ["if (pm.response.code === 201) {", "  const data = pm.response.json();", "  if (data.id) pm.collectionVariables.set('createdUserId', data.id);", "}"]
+                                                "exec": [
+                                                      "if (pm.response.code === 201) {",
+                                                      "  const data = pm.response.json();",
+                                                      "  if (data.id) pm.collectionVariables.set('createdUserId', data.id);",
+                                                      "}"
+                                                ]
                                           }
                                     }
                               ],
@@ -323,7 +328,12 @@
                                           "listen": "test",
                                           "script": {
                                                 "type": "text/javascript",
-                                                "exec": ["if (pm.response.code === 201) {", "  const data = pm.response.json();", "  if (data.id) pm.collectionVariables.set('createdClassId', data.id);", "}"]
+                                                "exec": [
+                                                      "if (pm.response.code === 201) {",
+                                                      "  const data = pm.response.json();",
+                                                      "  if (data.id) pm.collectionVariables.set('createdClassId', data.id);",
+                                                      "}"
+                                                ]
                                           }
                                     }
                               ],
@@ -435,7 +445,12 @@
                                           "listen": "test",
                                           "script": {
                                                 "type": "text/javascript",
-                                                "exec": ["if (pm.response.code === 201) {", "  const data = pm.response.json();", "  if (data.id) pm.collectionVariables.set('createdSubjectId', data.id);", "}"]
+                                                "exec": [
+                                                      "if (pm.response.code === 201) {",
+                                                      "  const data = pm.response.json();",
+                                                      "  if (data.id) pm.collectionVariables.set('createdSubjectId', data.id);",
+                                                      "}"
+                                                ]
                                           }
                                     }
                               ],
@@ -533,7 +548,12 @@
                                           "listen": "test",
                                           "script": {
                                                 "type": "text/javascript",
-                                                "exec": ["if (pm.response.code === 200) {", "  const data = pm.response.json();", "  if (data.id) pm.collectionVariables.set('teacherAssignmentId', data.id);", "}"]
+                                                "exec": [
+                                                      "if (pm.response.code === 200) {",
+                                                      "  const data = pm.response.json();",
+                                                      "  if (data.id) pm.collectionVariables.set('teacherAssignmentId', data.id);",
+                                                      "}"
+                                                ]
                                           }
                                     }
                               ],
@@ -610,7 +630,12 @@
                                           "listen": "test",
                                           "script": {
                                                 "type": "text/javascript",
-                                                "exec": ["if (pm.response.code === 200) {", "  const data = pm.response.json();", "  if (data.id) pm.collectionVariables.set('enrollmentId', data.id);", "}"]
+                                                "exec": [
+                                                      "if (pm.response.code === 200) {",
+                                                      "  const data = pm.response.json();",
+                                                      "  if (data.id) pm.collectionVariables.set('enrollmentId', data.id);",
+                                                      "}"
+                                                ]
                                           }
                                     }
                               ],
@@ -703,7 +728,12 @@
                                           "listen": "test",
                                           "script": {
                                                 "type": "text/javascript",
-                                                "exec": ["if (pm.response.code === 201) {", "  const data = pm.response.json();", "  if (data.id) pm.collectionVariables.set('assignmentId', data.id);", "}"]
+                                                "exec": [
+                                                      "if (pm.response.code === 201) {",
+                                                      "  const data = pm.response.json();",
+                                                      "  if (data.id) pm.collectionVariables.set('assignmentId', data.id);",
+                                                      "}"
+                                                ]
                                           }
                                     }
                               ],
@@ -853,7 +883,12 @@
                                           "listen": "test",
                                           "script": {
                                                 "type": "text/javascript",
-                                                "exec": ["if (pm.response.code === 200) {", "  const data = pm.response.json();", "  if (data.id) pm.collectionVariables.set('submissionId', data.id);", "}"]
+                                                "exec": [
+                                                      "if (pm.response.code === 200) {",
+                                                      "  const data = pm.response.json();",
+                                                      "  if (data.id) pm.collectionVariables.set('submissionId', data.id);",
+                                                      "}"
+                                                ]
                                           }
                                     }
                               ],

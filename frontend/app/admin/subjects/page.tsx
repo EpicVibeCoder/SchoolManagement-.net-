@@ -1,6 +1,6 @@
 "use client";
 
-import {  useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,7 +9,6 @@ import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, SubjectDto, del, get, post, put } from "@/lib/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
-
 
 const subjectSchema = z.object({
       name: z.string().min(1, "Name is required"),
@@ -33,7 +32,7 @@ export default function AdminSubjectsPage() {
       const [submitting, setSubmitting] = useState(false);
       const [editingId, setEditingId] = useState<string | null>(null);
       const [busyId, setBusyId] = useState<string | null>(null);
-     const [actionError, setActionError] = useState<string | null>(null);
+      const [actionError, setActionError] = useState<string | null>(null);
 
       const {
             register,
@@ -144,10 +143,19 @@ export default function AdminSubjectsPage() {
                                                                   <td>{subject.code}</td>
                                                                   <td>
                                                                         <div className="flex justify-end gap-2">
-                                                                              <button type="button" className="sm-btn sm-btn-secondary" onClick={() => startEdit(subject)}>
+                                                                              <button
+                                                                                    type="button"
+                                                                                    className="sm-btn sm-btn-secondary"
+                                                                                    onClick={() => startEdit(subject)}
+                                                                              >
                                                                                     Edit
                                                                               </button>
-                                                                              <button type="button" className="sm-btn sm-btn-danger" disabled={busyId === subject.id} onClick={() => remove(subject.id)}>
+                                                                              <button
+                                                                                    type="button"
+                                                                                    className="sm-btn sm-btn-danger"
+                                                                                    disabled={busyId === subject.id}
+                                                                                    onClick={() => remove(subject.id)}
+                                                                              >
                                                                                     Delete
                                                                               </button>
                                                                         </div>

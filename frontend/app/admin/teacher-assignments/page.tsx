@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, ClassDto, PagedResult, SubjectDto, TeacherAssignmentDto, UserDto, UserRole, del, get, post } from "@/lib/api";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
 const assignmentSchema = z.object({
       teacherId: z.string().min(1, "Teacher is required"),
@@ -17,20 +19,44 @@ const assignmentSchema = z.object({
 type AssignmentFormValues = z.infer<typeof assignmentSchema>;
 
 export default function TeacherAssignmentsPage() {
-      const [assignments, setAssignments] = useState<TeacherAssignmentDto[]>([]);
-      const [teachers, setTeachers] = useState<UserDto[]>([]);
-      const [classes, setClasses] = useState<ClassDto[]>([]);
-      const [subjects, setSubjects] = useState<SubjectDto[]>([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
+      const queryClient = useQueryClient();
       const [formError, setFormError] = useState<string | null>(null);
+      const [actionError, setActionError] = useState<string | null>(null);
       const [submitting, setSubmitting] = useState(false);
       const [busyId, setBusyId] = useState<string | null>(null);
+
+      const [assignmentsQuery, teachersQuery, classesQuery, subjectsQuery] = useQueries({
+            queries: [
+                  {
+                        queryKey: queryKeys.teacherAssignments(),
+                        queryFn: () => get<TeacherAssignmentDto[]>("/api/teacher-assignments"),
+                  },
+                  {
+                        queryKey: queryKeys.users("", UserRole.Teacher),
+                        queryFn: () => get<PagedResult<UserDto>>(`/api/users?role=${UserRole.Teacher}&pageSize=200`),
+                  },
+                  {
+                        queryKey: queryKeys.classes,
+                        queryFn: () => get<ClassDto[]>("/api/classes"),
+                  },
+                  {
+                        queryKey: queryKeys.subjects,
+                        queryFn: () => get<SubjectDto[]>("/api/subjects"),
+                  },
+            ],
+      });
+
+      const assignments = assignmentsQuery.data ?? [];
+      const teachers = teachersQuery.data?.items ?? [];
+      const classes = classesQuery.data ?? [];
+      const subjects = subjectsQuery.data ?? [];
+      const loading = assignmentsQuery.isPending || teachersQuery.isPending || classesQuery.isPending || subjectsQuery.isPending;
+      const firstError = assignmentsQuery.error ?? teachersQuery.error ?? classesQuery.error ?? subjectsQuery.error;
+      const error = firstError instanceof ApiError ? firstError.message : firstError ? "Failed to load teacher assignments." : null;
 
       const {
             register,
             handleSubmit,
-            watch,
             reset,
             formState: { errors },
       } = useForm<AssignmentFormValues>({
@@ -42,33 +68,6 @@ export default function TeacherAssignmentsPage() {
             },
       });
 
-      const subjectsForClass = useMemo(() => subjects, [subjects]);
-
-      const loadAll = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                  const [assignmentsData, teachersData, classesData, subjectsData] = await Promise.all([
-                        get<TeacherAssignmentDto[]>("/api/teacher-assignments"),
-                        get<PagedResult<UserDto>>(`/api/users?role=${UserRole.Teacher}&pageSize=200`),
-                        get<ClassDto[]>("/api/classes"),
-                        get<SubjectDto[]>("/api/subjects"),
-                  ]);
-                  setAssignments(assignmentsData);
-                  setTeachers(teachersData.items);
-                  setClasses(classesData);
-                  setSubjects(subjectsData);
-            } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to load teacher assignments.");
-            } finally {
-                  setLoading(false);
-            }
-      };
-
-      useEffect(() => {
-            loadAll();
-      }, []);
-
       const onSubmit = async (values: AssignmentFormValues) => {
             setFormError(null);
             setSubmitting(true);
@@ -79,7 +78,7 @@ export default function TeacherAssignmentsPage() {
                         classId: "",
                         subjectId: "",
                   });
-                  await loadAll();
+                  await queryClient.invalidateQueries({ queryKey: ["teacher-assignments"] });
             } catch (err) {
                   setFormError(err instanceof ApiError ? err.message : "Failed to create assignment.");
             } finally {
@@ -89,11 +88,12 @@ export default function TeacherAssignmentsPage() {
 
       const remove = async (id: string) => {
             setBusyId(id);
+            setActionError(null);
             try {
                   await del(`/api/teacher-assignments/${id}`);
-                  await loadAll();
+                  await queryClient.invalidateQueries({ queryKey: ["teacher-assignments"] });
             } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to remove assignment.");
+                  setActionError(err instanceof ApiError ? err.message : "Failed to remove assignment.");
             } finally {
                   setBusyId(null);
             }
@@ -142,7 +142,7 @@ export default function TeacherAssignmentsPage() {
                                           </label>
                                           <select id="subjectId" className="sm-input" {...register("subjectId")}>
                                                 <option value="">Select a subject</option>
-                                                {subjectsForClass.map((subject) => (
+                                                {subjects.map((subject) => (
                                                       <option key={subject.id} value={subject.id}>
                                                             {subject.name}
                                                       </option>
@@ -158,7 +158,7 @@ export default function TeacherAssignmentsPage() {
 
                         <div className="lg:col-span-2 lg:order-1">
                               {loading && <LoadingBlock label="Loading assignments…" />}
-                              {error && <ErrorBlock message={error} />}
+                              {(error || actionError) && <ErrorBlock message={error ?? actionError!} />}
 
                               {!loading && (
                                     <div className="sm-card overflow-x-auto">
@@ -179,7 +179,12 @@ export default function TeacherAssignmentsPage() {
                                                                   <td>{a.subjectName}</td>
                                                                   <td>
                                                                         <div className="flex justify-end">
-                                                                              <button type="button" className="sm-btn sm-btn-danger" disabled={busyId === a.id} onClick={() => remove(a.id)}>
+                                                                              <button
+                                                                                    type="button"
+                                                                                    className="sm-btn sm-btn-danger"
+                                                                                    disabled={busyId === a.id}
+                                                                                    onClick={() => remove(a.id)}
+                                                                              >
                                                                                     Remove
                                                                               </button>
                                                                         </div>

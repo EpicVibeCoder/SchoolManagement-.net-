@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, ClassDto, del, get, post, put } from "@/lib/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
 const currentYear = new Date().getFullYear();
 const yearOptions = Array.from({ length: 16 }, (_, i) => (currentYear - 5 + i).toString());
@@ -26,11 +28,19 @@ const classSchema = z
 type ClassFormValues = z.infer<typeof classSchema>;
 
 export default function AdminClassesPage() {
-      const [classes, setClasses] = useState<ClassDto[]>([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
+      const queryClient = useQueryClient();
+      const {
+            data: classes = [],
+            isPending: loading,
+            error,
+      } = useQuery({
+            queryKey: queryKeys.classes,
+            queryFn: () => get<ClassDto[]>("/api/classes"),
+      });
+      const errorMessage = error instanceof ApiError ? error.message : error ? "Failed to load classes." : null;
       const [search, setSearch] = useState("");
       const [formError, setFormError] = useState<string | null>(null);
+      const [actionError, setActionError] = useState<string | null>(null);
       const [submitting, setSubmitting] = useState(false);
       const [editingId, setEditingId] = useState<string | null>(null);
       const [busyId, setBusyId] = useState<string | null>(null);
@@ -38,11 +48,7 @@ export default function AdminClassesPage() {
       const filteredClasses = classes.filter((klass) => {
             const q = search.trim().toLowerCase();
             if (!q) return true;
-            return (
-                  klass.name.toLowerCase().includes(q) ||
-                  klass.code.toLowerCase().includes(q) ||
-                  klass.academicYear.toLowerCase().includes(q)
-            );
+            return klass.name.toLowerCase().includes(q) || klass.code.toLowerCase().includes(q) || klass.academicYear.toLowerCase().includes(q);
       });
 
       const parseAcademicYear = (academicYear: string) => {
@@ -56,7 +62,7 @@ export default function AdminClassesPage() {
             register,
             handleSubmit,
             reset,
-            watch,
+            control,
             setValue,
             formState: { errors },
       } = useForm<ClassFormValues>({
@@ -69,34 +75,19 @@ export default function AdminClassesPage() {
             },
       });
 
-      const watchStartYear = watch("startYear");
+      const watchStartYear = useWatch({ control, name: "startYear" });
+      const watchEndYear = useWatch({ control, name: "endYear" });
 
-      useEffect(() => {
-            if (watchStartYear) {
-                  const startNum = parseInt(watchStartYear, 10);
-                  const currentEndNum = parseInt(watch("endYear") || "0", 10);
-                  if (isNaN(currentEndNum) || currentEndNum < startNum) {
-                        setValue("endYear", (startNum + 1).toString(), { shouldValidate: true });
-                  }
-            }
-      }, [watchStartYear, setValue, watch]);
 
-      const load = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                  const data = await get<ClassDto[]>("/api/classes");
-                  setClasses(data);
-            } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to load classes.");
-            } finally {
-                  setLoading(false);
-            }
-      };
-
-      useEffect(() => {
-            load();
-      }, []);
+     useEffect(() => {
+           if (watchStartYear) {
+                 const startNum = parseInt(watchStartYear, 10);
+                 const currentEndNum = parseInt(watchEndYear || "0", 10);
+                 if (isNaN(currentEndNum) || currentEndNum < startNum) {
+                       setValue("endYear", (startNum + 1).toString(), { shouldValidate: true });
+                 }
+           }
+     }, [watchStartYear, watchEndYear, setValue]);
 
       const startEdit = (klass: ClassDto) => {
             setEditingId(klass.id);
@@ -134,7 +125,7 @@ export default function AdminClassesPage() {
                         });
                   }
                   cancelEdit();
-                  await load();
+                  await queryClient.invalidateQueries({ queryKey: queryKeys.classes });
             } catch (err) {
                   setFormError(err instanceof ApiError ? err.message : "Failed to save class.");
             } finally {
@@ -144,11 +135,12 @@ export default function AdminClassesPage() {
 
       const remove = async (id: string) => {
             setBusyId(id);
+            setActionError(null);
             try {
                   await del(`/api/classes/${id}`);
-                  await load();
+                  await queryClient.invalidateQueries({ queryKey: queryKeys.classes });
             } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to delete class.");
+                  setActionError(err instanceof ApiError ? err.message : "Failed to delete class.");
             } finally {
                   setBusyId(null);
             }
@@ -191,7 +183,9 @@ export default function AdminClassesPage() {
                                                                   </option>
                                                             ))}
                                                       </select>
-                                                      {errors.startYear && <p className="mt-1 text-xs text-(--color-danger)">{errors.startYear.message}</p>}
+                                                      {errors.startYear && (
+                                                            <p className="mt-1 text-xs text-(--color-danger)">{errors.startYear.message}</p>
+                                                      )}
                                                 </div>
                                                 <div>
                                                       <label className="text-xs text-(--color-ink-soft) font-medium block mb-1" htmlFor="endYear">
@@ -204,7 +198,9 @@ export default function AdminClassesPage() {
                                                                   </option>
                                                             ))}
                                                       </select>
-                                                      {errors.endYear && <p className="mt-1 text-xs text-(--color-danger)">{errors.endYear.message}</p>}
+                                                      {errors.endYear && (
+                                                            <p className="mt-1 text-xs text-(--color-danger)">{errors.endYear.message}</p>
+                                                      )}
                                                 </div>
                                           </div>
                                     </div>
@@ -233,7 +229,7 @@ export default function AdminClassesPage() {
                               </div>
 
                               {loading && <LoadingBlock label="Loading classes…" />}
-                              {error && <ErrorBlock message={error} />}
+                              {(errorMessage || actionError) && <ErrorBlock message={errorMessage ?? actionError!} />}
 
                               {!loading && (
                                     <div className="sm-card overflow-x-auto">
@@ -254,10 +250,19 @@ export default function AdminClassesPage() {
                                                                   <td>{klass.academicYear}</td>
                                                                   <td>
                                                                         <div className="flex justify-end gap-2">
-                                                                              <button type="button" className="sm-btn sm-btn-secondary" onClick={() => startEdit(klass)}>
+                                                                              <button
+                                                                                    type="button"
+                                                                                    className="sm-btn sm-btn-secondary"
+                                                                                    onClick={() => startEdit(klass)}
+                                                                              >
                                                                                     Edit
                                                                               </button>
-                                                                              <button type="button" className="sm-btn sm-btn-danger" disabled={busyId === klass.id} onClick={() => remove(klass.id)}>
+                                                                              <button
+                                                                                    type="button"
+                                                                                    className="sm-btn sm-btn-danger"
+                                                                                    disabled={busyId === klass.id}
+                                                                                    onClick={() => remove(klass.id)}
+                                                                              >
                                                                                     Delete
                                                                               </button>
                                                                         </div>

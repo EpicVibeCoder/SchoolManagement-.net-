@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,6 +9,8 @@ import { ActiveBadge, RoleBadge } from "@/components/Badge";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, CreateUserRequest, PagedResult, UserDto, UserRole, del, get, post, put, userRoleOptions } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
 const createUserSchema = z.object({
       email: z.string().min(1, "Email is required").email("Enter a valid email"),
@@ -20,14 +22,30 @@ const createUserSchema = z.object({
 type CreateUserFormValues = z.infer<typeof createUserSchema>;
 
 export default function AdminUsersPage() {
-      const [result, setResult] = useState<PagedResult<UserDto> | null>(null);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
+      const queryClient = useQueryClient();
       const [search, setSearch] = useState("");
       const [roleFilter, setRoleFilter] = useState<string>("");
       const [formError, setFormError] = useState<string | null>(null);
+      const [actionError, setActionError] = useState<string | null>(null);
       const [submitting, setSubmitting] = useState(false);
       const [busyId, setBusyId] = useState<string | null>(null);
+
+      const {
+            data: result,
+            isPending: loading,
+            error,
+      } = useQuery({
+            queryKey: queryKeys.users(search, roleFilter || undefined),
+            queryFn: () => {
+                  const params = new URLSearchParams();
+                  if (search) params.set("search", search);
+                  if (roleFilter !== "") params.set("role", roleFilter);
+                  params.set("page", "1");
+                  params.set("pageSize", "50");
+                  return get<PagedResult<UserDto>>(`/api/users?${params.toString()}`);
+            },
+      });
+      const errorMessage = error instanceof ApiError ? error.message : error ? "Failed to load users." : null;
 
       const {
             register,
@@ -39,28 +57,7 @@ export default function AdminUsersPage() {
             defaultValues: { email: "", password: "", fullName: "", role: UserRole.Student },
       });
 
-      const loadUsers = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                  const params = new URLSearchParams();
-                  if (search) params.set("search", search);
-                  if (roleFilter !== "") params.set("role", roleFilter);
-                  params.set("page", "1");
-                  params.set("pageSize", "50");
-                  const data = await get<PagedResult<UserDto>>(`/api/users?${params.toString()}`);
-                  setResult(data);
-            } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to load users.");
-            } finally {
-                  setLoading(false);
-            }
-      };
-
-      useEffect(() => {
-            loadUsers();
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [search, roleFilter]);
+      const invalidateUsers = () => queryClient.invalidateQueries({ queryKey: ["users"] });
 
       const onCreate = async (values: CreateUserFormValues) => {
             setFormError(null);
@@ -74,7 +71,7 @@ export default function AdminUsersPage() {
                   };
                   await post<UserDto>("/api/users", payload);
                   reset({ email: "", password: "", fullName: "", role: UserRole.Student });
-                  await loadUsers();
+                  await invalidateUsers();
             } catch (err) {
                   setFormError(err instanceof ApiError ? err.message : "Failed to create user.");
             } finally {
@@ -84,6 +81,7 @@ export default function AdminUsersPage() {
 
       const toggleActive = async (targetUser: UserDto) => {
             setBusyId(targetUser.id);
+            setActionError(null);
             try {
                   await put(`/api/users/${targetUser.id}`, {
                         fullName: targetUser.fullName,
@@ -91,9 +89,9 @@ export default function AdminUsersPage() {
                         isActive: !targetUser.isActive,
                         password: null,
                   });
-                  await loadUsers();
+                  await invalidateUsers();
             } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to update user.");
+                  setActionError(err instanceof ApiError ? err.message : "Failed to update user.");
             } finally {
                   setBusyId(null);
             }
@@ -101,11 +99,12 @@ export default function AdminUsersPage() {
 
       const deactivate = async (id: string) => {
             setBusyId(id);
+            setActionError(null);
             try {
                   await del(`/api/users/${id}`);
-                  await loadUsers();
+                  await invalidateUsers();
             } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Failed to deactivate user.");
+                  setActionError(err instanceof ApiError ? err.message : "Failed to deactivate user.");
             } finally {
                   setBusyId(null);
             }
@@ -161,7 +160,12 @@ export default function AdminUsersPage() {
 
                         <div className="lg:col-span-2 lg:order-1">
                               <div className="mb-4 flex flex-col gap-2 sm:flex-row">
-                                    <input className="sm-input sm:max-w-xs" placeholder="Search by name or email…" value={search} onChange={(e) => setSearch(e.target.value)} />
+                                    <input
+                                          className="sm-input sm:max-w-xs"
+                                          placeholder="Search by name or email…"
+                                          value={search}
+                                          onChange={(e) => setSearch(e.target.value)}
+                                    />
                                     <select className="sm-input sm:max-w-[10rem]" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
                                           <option value="">All roles</option>
                                           {userRoleOptions.map((opt) => (
@@ -173,7 +177,7 @@ export default function AdminUsersPage() {
                               </div>
 
                               {loading && <LoadingBlock label="Loading users…" />}
-                              {error && <ErrorBlock message={error} />}
+                              {(errorMessage || actionError) && <ErrorBlock message={errorMessage ?? actionError!} />}
 
                               {result && !loading && (
                                     <div className="sm-card overflow-x-auto">
@@ -202,11 +206,21 @@ export default function AdminUsersPage() {
                                                                   <td>{formatDate(u.createdAt)}</td>
                                                                   <td>
                                                                         <div className="flex justify-end gap-2">
-                                                                              <button type="button" className="sm-btn sm-btn-secondary" disabled={busyId === u.id} onClick={() => toggleActive(u)}>
+                                                                              <button
+                                                                                    type="button"
+                                                                                    className="sm-btn sm-btn-secondary"
+                                                                                    disabled={busyId === u.id}
+                                                                                    onClick={() => toggleActive(u)}
+                                                                              >
                                                                                     {u.isActive ? "Deactivate" : "Activate"}
                                                                               </button>
                                                                               {u.isActive && (
-                                                                                    <button type="button" className="sm-btn sm-btn-danger" disabled={busyId === u.id} onClick={() => deactivate(u.id)}>
+                                                                                    <button
+                                                                                          type="button"
+                                                                                          className="sm-btn sm-btn-danger"
+                                                                                          disabled={busyId === u.id}
+                                                                                          onClick={() => deactivate(u.id)}
+                                                                                    >
                                                                                           Remove
                                                                                     </button>
                                                                               )}

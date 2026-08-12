@@ -2,7 +2,7 @@
 
 # 🎓 School Management System
 
-### *An enterprise-grade, high-performance Academic & Assignment Management Platform*
+### _An enterprise-grade, high-performance Academic & Assignment Management Platform_
 
 [![.NET 10.0](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.3-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
@@ -89,22 +89,22 @@ SchoolManagement(.net)/
 
 ## ⚡ Tech Stack
 
-| Domain | Technology | Version | Description & Role |
-| :--- | :--- | :--- | :--- |
-| **Backend Framework** | ASP.NET Core Web API | `.NET 10.0` | High-throughput REST API Web Host |
-| **Database** | PostgreSQL | `18.2-alpine` | Relational database container via Docker Compose |
-| **ORM** | Entity Framework Core | `10.0.10` | ORM persistence & Npgsql PostgreSQL provider (`10.0.3`) |
-| **Backend Validation** | FluentValidation | `12.1.1` | Request contract validation rules |
-| **Backend Security** | BCrypt.Net-Next & JwtBearer | `4.2.0` / `10.0.10` | Password hashing & JWT token authorization |
-| **Backend Logging** | Serilog | `10.0.0` | Structured JSON request logging & correlation |
-| **API Documentation** | OpenAPI & Swashbuckle Swagger UI | `10.0.10` / `10.2.3` | Interactive Swagger API documentation UI |
-| **Frontend Framework**| Next.js (App Router) | `16.3.0` | React server/client components & SPA dashboards |
-| **Data Fetching & Caching** | TanStack React Query | `5.101.4` | Server state management, caching & query provider |
-| **UI Library & Styling** | React 19 & Tailwind CSS | `19.2.8` / `4.0` | Modern responsive component rendering & styles |
-| **Frontend Forms** | React Hook Form & Zod | `7.84.0` / `4.4.3` | Schema-validated client forms |
-| **Testing Framework** | xUnit & FluentAssertions | `2.9.3` / `8.10.0` | Backend unit & business-rule test suite |
-| **Formatting & Linting**| CSharpier, Prettier, ESLint | Latest | Code formatting & static code analysis |
-| **Containerization** | Docker & Docker Compose | `v2+` | Multi-container development & production runtime |
+| Domain                      | Technology                       | Version              | Description & Role                                      |
+| :-------------------------- | :------------------------------- | :------------------- | :------------------------------------------------------ |
+| **Backend Framework**       | ASP.NET Core Web API             | `.NET 10.0`          | High-throughput REST API Web Host                       |
+| **Database**                | PostgreSQL                       | `18.2-alpine`        | Relational database container via Docker Compose        |
+| **ORM**                     | Entity Framework Core            | `10.0.10`            | ORM persistence & Npgsql PostgreSQL provider (`10.0.3`) |
+| **Backend Validation**      | FluentValidation                 | `12.1.1`             | Request contract validation rules                       |
+| **Backend Security**        | BCrypt.Net-Next & JwtBearer      | `4.2.0` / `10.0.10`  | Password hashing & JWT token authorization              |
+| **Backend Logging**         | Serilog                          | `10.0.0`             | Structured JSON request logging & correlation           |
+| **API Documentation**       | OpenAPI & Swashbuckle Swagger UI | `10.0.10` / `10.2.3` | Interactive Swagger API documentation UI                |
+| **Frontend Framework**      | Next.js (App Router)             | `16.3.0`             | React server/client components & SPA dashboards         |
+| **Data Fetching & Caching** | TanStack React Query             | `5.101.4`            | Server state management, caching & query provider       |
+| **UI Library & Styling**    | React 19 & Tailwind CSS          | `19.2.8` / `4.0`     | Modern responsive component rendering & styles          |
+| **Frontend Forms**          | React Hook Form & Zod            | `7.84.0` / `4.4.3`   | Schema-validated client forms                           |
+| **Testing Framework**       | xUnit & FluentAssertions         | `2.9.3` / `8.10.0`   | Backend unit & business-rule test suite                 |
+| **Formatting & Linting**    | CSharpier, Prettier, ESLint      | Latest               | Code formatting & static code analysis                  |
+| **Containerization**        | Docker & Docker Compose          | `v2+`                | Multi-container development & production runtime        |
 
 ---
 
@@ -112,21 +112,21 @@ SchoolManagement(.net)/
 
 The system enforces granular authorization rules to restrict operations by user role:
 
-| Feature / Action | Admin | Teacher | Student |
-| :--- | :---: | :---: | :---: |
-| **Manage Users (Create/Update/Deactivate)** | ✅ | ❌ | ❌ |
-| **Manage Classes & Subjects** | ✅ | ❌ | ❌ |
-| **Assign Teachers to Subject & Class** | ✅ | ❌ | ❌ |
-| **Enroll Students in Class** | ✅ | ❌ | ❌ |
-| **Configure System Settings (e.g. Allow Late Submissions)** | ✅ | ❌ | ❌ |
-| **View Institutional Dashboards & Statistics** | ✅ | ❌ | ❌ |
-| **Create / Edit / Delete Assignments** | ❌ | ✅ (Assigned only) | ❌ |
-| **Publish / Unpublish Assignments** | ❌ | ✅ (Assigned only) | ❌ |
-| **Grade Submissions & Provide Feedback** | ❌ | ✅ (Assigned only) | ❌ |
-| **View Enrolled Class Assignments** | ❌ | ❌ | ✅ |
-| **Submit & Edit Assignment Responses** | ❌ | ❌ | ✅ |
-| **View Received Grades & Teacher Feedback** | ❌ | ❌ | ✅ |
-| **Access In-App Notifications** | ✅ | ✅ | ✅ |
+| Feature / Action                                            | Admin |      Teacher       | Student |
+| :---------------------------------------------------------- | :---: | :----------------: | :-----: |
+| **Manage Users (Create/Update/Deactivate)**                 |  ✅   |         ❌         |   ❌    |
+| **Manage Classes & Subjects**                               |  ✅   |         ❌         |   ❌    |
+| **Assign Teachers to Subject & Class**                      |  ✅   |         ❌         |   ❌    |
+| **Enroll Students in Class**                                |  ✅   |         ❌         |   ❌    |
+| **Configure System Settings (e.g. Allow Late Submissions)** |  ✅   |         ❌         |   ❌    |
+| **View Institutional Dashboards & Statistics**              |  ✅   |         ❌         |   ❌    |
+| **Create / Edit / Delete Assignments**                      |  ❌   | ✅ (Assigned only) |   ❌    |
+| **Publish / Unpublish Assignments**                         |  ❌   | ✅ (Assigned only) |   ❌    |
+| **Grade Submissions & Provide Feedback**                    |  ❌   | ✅ (Assigned only) |   ❌    |
+| **View Enrolled Class Assignments**                         |  ❌   |         ❌         |   ✅    |
+| **Submit & Edit Assignment Responses**                      |  ❌   |         ❌         |   ✅    |
+| **View Received Grades & Teacher Feedback**                 |  ❌   |         ❌         |   ✅    |
+| **Access In-App Notifications**                             |  ✅   |         ✅         |   ✅    |
 
 ---
 
@@ -137,6 +137,7 @@ Follow these steps to run the complete solution locally.
 ### Prerequisites
 
 Ensure you have installed:
+
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`dotnet --version`)
 - [Node.js (v20 or v22 LTS)](https://nodejs.org/) & `npm` (`node --version`)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) or Docker Engine with Docker Compose
@@ -164,11 +165,12 @@ Start PostgreSQL container in background:
 docker compose up -d postgres
 ```
 
-*(Optional)* Start `pgAdmin4` for database management:
+_(Optional)_ Start `pgAdmin4` for database management:
 
 ```bash
 docker compose --profile tools up -d pgadmin
 ```
+
 - **pgAdmin URL:** `http://localhost:5050` (Login: `admin@local.com` / `admin`)
 
 ---
@@ -187,7 +189,7 @@ dotnet watch run --project src/backend.csproj
 - **Swagger Documentation:** `http://localhost:5000/swagger`
 - **Health Check (GET/HEAD):** `http://localhost:5000/api/Health`
 
-*Note: Database migrations and initial seed data apply automatically on backend startup via `DbSeeder`.*
+_Note: Database migrations and initial seed data apply automatically on backend startup via `DbSeeder`._
 
 ---
 
@@ -242,8 +244,9 @@ npx prettier --write .
 ### Entity Relationship Model
 
 The PostgreSQL database enforces relational integrity across core domain entities:
+
 - **`Users`**: System users (Admin, Teacher, Student) with hashed passwords (`BCrypt`).
-- **`Classes` & `Subjects`**: Academic structures (e.g., *Grade 10 A*, *Mathematics*, *English*).
+- **`Classes` & `Subjects`**: Academic structures (e.g., _Grade 10 A_, _Mathematics_, _English_).
 - **`TeacherAssignments`**: Composite mapping linking Teacher, Class, and Subject.
 - **`Enrollments`**: Mapping linking Student to Class.
 - **`Assignments`**: Worksheets and quizzes created by teachers with `Draft`/`Published` status and deadline constraints.
@@ -267,7 +270,7 @@ dotnet ef database update --project src/backend.csproj
 
 ### SQL Seed Backup
 
-A pre-populated database snapshot is maintained at [`docs/db/seed-backup.sql`](file:///home/ash/githubRepos/SchoolManagement(.net)/docs/db/seed-backup.sql).
+A pre-populated database snapshot is maintained at [`docs/db/seed-backup.sql`](<file:///home/ash/githubRepos/SchoolManagement(.net)/docs/db/seed-backup.sql>).
 
 ---
 
@@ -275,12 +278,12 @@ A pre-populated database snapshot is maintained at [`docs/db/seed-backup.sql`](f
 
 Use the pre-seeded credentials below to explore the application across different access levels:
 
-| Role | Email | Password | Scope & Description |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin@school.com` | `Admin123!` | Full administrative control across all system modules |
-| **Teacher** | `teacher@school.com` | `Teacher123!` | Can create/manage assignments & grade student work |
-| **Student 1** | `student1@school.com` | `Student123!` | Enrolled student persona for submitting assignments |
-| **Student 2** | `student2@school.com` | `Student123!` | Secondary enrolled student persona |
+| Role          | Email                 | Password      | Scope & Description                                   |
+| :------------ | :-------------------- | :------------ | :---------------------------------------------------- |
+| **Admin**     | `admin@school.com`    | `Admin123!`   | Full administrative control across all system modules |
+| **Teacher**   | `teacher@school.com`  | `Teacher123!` | Can create/manage assignments & grade student work    |
+| **Student 1** | `student1@school.com` | `Student123!` | Enrolled student persona for submitting assignments   |
+| **Student 2** | `student2@school.com` | `Student123!` | Secondary enrolled student persona                    |
 
 ---
 
@@ -296,19 +299,21 @@ HEAD /api/Health
 ```
 
 **Response (200 OK):**
+
 ```json
 {
-  "status": "Healthy",
-  "timestamp": "2026-08-11T22:00:00Z",
-  "database": "Connected"
+      "status": "Healthy",
+      "timestamp": "2026-08-11T22:00:00Z",
+      "database": "Connected"
 }
 ```
 
 ### OpenAPI / Swagger Documentation
 
 Interactive OpenAPI documentation is dynamically served:
+
 - **Swagger UI:** `http://localhost:5000/swagger`
-- **Postman Collection:** [`docs/School Management API.postman_collection.json`](file:///home/ash/githubRepos/SchoolManagement(.net)/docs/School%20Management%20API.postman_collection.json)
+- **Postman Collection:** [`docs/School Management API.postman_collection.json`](<file:///home/ash/githubRepos/SchoolManagement(.net)/docs/School%20Management%20API.postman_collection.json>)
 
 ---
 
@@ -321,22 +326,22 @@ Interactive OpenAPI documentation is dynamically served:
 
 ### Deploying Backend to Render (Blueprint)
 
-The repository includes a production blueprint spec in [`render.yaml`](file:///home/ash/githubRepos/SchoolManagement(.net)/render.yaml):
+The repository includes a production blueprint spec in [`render.yaml`](<file:///home/ash/githubRepos/SchoolManagement(.net)/render.yaml>):
 
 1. Push repository updates to **GitHub**.
 2. Sign in to your [Render Dashboard](https://dashboard.render.com/).
 3. Create a **New Blueprint** connecting this repository.
-4. Render automatically builds the `.NET 10 API` via [`backend/Dockerfile`](file:///home/ash/githubRepos/SchoolManagement(.net)/backend/Dockerfile) and provisions a PostgreSQL database instance with `DATABASE_URL` and `FRONTEND_ORIGIN`.
+4. Render automatically builds the `.NET 10 API` via [`backend/Dockerfile`](<file:///home/ash/githubRepos/SchoolManagement(.net)/backend/Dockerfile>) and provisions a PostgreSQL database instance with `DATABASE_URL` and `FRONTEND_ORIGIN`.
 
 ### Automated CI/CD (GitHub Actions)
 
 The repository runs two GitHub Actions workflows:
-1. [`.github/workflows/ci.yml`](file:///home/ash/githubRepos/SchoolManagement(.net)/.github/workflows/ci.yml): Executes `dotnet test`, TypeScript type checking (`tsc --noEmit`), and Next.js linting on every push and pull request.
-2. [`.github/workflows/deploy-backend.yml`](file:///home/ash/githubRepos/SchoolManagement(.net)/.github/workflows/deploy-backend.yml): Triggers automated backend deployment to Render upon pushing to `main` or `master`.
+
+1. [`.github/workflows/ci.yml`](<file:///home/ash/githubRepos/SchoolManagement(.net)/.github/workflows/ci.yml>): Executes `dotnet test`, TypeScript type checking (`tsc --noEmit`), and Next.js linting on every push and pull request.
+2. [`.github/workflows/deploy-backend.yml`](<file:///home/ash/githubRepos/SchoolManagement(.net)/.github/workflows/deploy-backend.yml>): Triggers automated backend deployment to Render upon pushing to `main` or `master`.
 
 ---
 
 ## 📄 License
 
 This repository is licensed under the **MIT License**.
-

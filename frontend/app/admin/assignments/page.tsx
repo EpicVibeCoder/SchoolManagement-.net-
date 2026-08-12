@@ -1,42 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AssignmentStatusBadge } from "@/components/Badge";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AssignmentDto, get } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
+import { queryKeys } from "@/lib/query-keys";
 
 export default function AdminAssignmentsPage() {
-      const [assignments, setAssignments] = useState<AssignmentDto[]>([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
-
-      useEffect(() => {
-            let cancelled = false;
-            get<AssignmentDto[]>("/api/assignments")
-                  .then((data) => {
-                        if (!cancelled) setAssignments(data);
-                  })
-                  .catch((err) => {
-                        if (!cancelled) setError(err instanceof ApiError ? err.message : "Failed to load assignments.");
-                  })
-                  .finally(() => {
-                        if (!cancelled) setLoading(false);
-                  });
-            return () => {
-                  cancelled = true;
-            };
-      }, []);
+      const {
+            data: assignments = [],
+            isPending: loading,
+            error,
+      } = useQuery({
+            queryKey: queryKeys.assignments,
+            queryFn: () => get<AssignmentDto[]>("/api/assignments"),
+      });
+      const errorMessage = error instanceof ApiError ? error.message : error ? "Failed to load assignments." : null;
 
       return (
             <div>
                   <PageHeader title="Assignments" description="All assignments across the school (read-only)." />
 
                   {loading && <LoadingBlock label="Loading assignments…" />}
-                  {error && <ErrorBlock message={error} />}
+                  {errorMessage && <ErrorBlock message={errorMessage} />}
 
-                  {!loading && !error && (
+                  {!loading && !errorMessage && (
                         <div className="sm-card overflow-x-auto">
                               <table className="sm-table">
                                     <thead>
