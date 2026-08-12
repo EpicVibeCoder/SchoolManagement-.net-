@@ -22,7 +22,6 @@ const NAV_LINKS: Record<UserRole, NavLink[]> = {
             { href: "/admin/teacher-assignments", label: "Teacher Assignments" },
             { href: "/admin/enrollments", label: "Enrollments" },
             { href: "/admin/assignments", label: "Assignments" },
-            { href: "/admin/submissions", label: "Submissions" },
             { href: "/admin/settings", label: "Settings" },
       ],
       [UserRole.Teacher]: [

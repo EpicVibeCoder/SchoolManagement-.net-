@@ -12,8 +12,8 @@ const STAT_CARDS: { key: keyof DashboardStatsDto; label: string; href: string }[
       { key: "users", label: "Users", href: "/admin/users" },
       { key: "classes", label: "Classes", href: "/admin/classes" },
       { key: "assignments", label: "Assignments", href: "/admin/assignments" },
-      { key: "submissions", label: "Submissions", href: "/admin/submissions" },
-      { key: "pendingGrading", label: "Pending Grading", href: "/admin/submissions" },
+      { key: "submissions", label: "Submissions", href: "/admin/assignments" },
+      { key: "pendingGrading", label: "Pending Grading", href: "/admin/assignments" },
       { key: "dueSoon", label: "Due Soon", href: "/admin/assignments" },
 ];
 
