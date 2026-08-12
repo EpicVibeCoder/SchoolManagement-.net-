@@ -9,7 +9,7 @@ import { AssignmentStatusBadge } from "@/components/Badge";
 import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
-import { ApiError, AssignmentDto, AssignmentStatus, del, get, post } from "@/lib/api";
+import { ApiError, AssignmentDto, AssignmentStatus, TeacherAssignmentDto, del, get, post } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { dateInputToEndOfDayIso, formatDate } from "@/lib/format";
 import { PAGE_SIZE, paginate } from "@/lib/paginate";
@@ -45,12 +45,17 @@ export default function TeacherAssignmentsPage() {
             queryFn: () => get<AssignmentDto[]>("/api/assignments"),
             enabled: !!user?.id,
       });
+      const teachingQuery = useQuery({
+            queryKey: queryKeys.teacherAssignments(user?.id),
+            queryFn: () => get<TeacherAssignmentDto[]>("/api/teacher-assignments/mine"),
+            enabled: !!user?.id,
+      });
 
       const assignments = useMemo(
             () => (assignmentsQuery.data ?? []).filter((a) => a.createdByTeacherId === user?.id),
             [assignmentsQuery.data, user?.id],
       );
-      const loading = assignmentsQuery.isPending;
+      const loading = assignmentsQuery.isPending || teachingQuery.isPending;
       const error =
             assignmentsQuery.error instanceof ApiError
                   ? assignmentsQuery.error.message
@@ -58,21 +63,16 @@ export default function TeacherAssignmentsPage() {
                     ? "Failed to load assignments."
                     : null;
       // Class/subject options from assignments you already created (no Admin API)
-      const teachingAssignments = useMemo(() => {
-            const map = new Map<string, { classId: string; className: string; subjectId: string; subjectName: string }>();
-            for (const a of assignments) {
-                  const key = `${a.classId}:${a.subjectId}`;
-                  if (!map.has(key)) {
-                        map.set(key, {
-                              classId: a.classId,
-                              className: a.className,
-                              subjectId: a.subjectId,
-                              subjectName: a.subjectName,
-                        });
-                  }
-            }
-            return Array.from(map.values());
-      }, [assignments]);
+      const teachingAssignments = useMemo(
+            () =>
+                  (teachingQuery.data ?? []).map((t) => ({
+                        classId: t.classId,
+                        className: t.className,
+                        subjectId: t.subjectId,
+                        subjectName: t.subjectName,
+                  })),
+            [teachingQuery.data],
+      );
 
       const [formError, setFormError] = useState<string | null>(null);
       const [actionError, setActionError] = useState<string | null>(null);
@@ -329,13 +329,7 @@ export default function TeacherAssignmentsPage() {
                                           </tbody>
                                     </table>
                               </div>
-                              <ListPagination
-                                    page={currentPage}
-                                    totalPages={totalPages}
-                                    total={total}
-                                    pageSize={PAGE_SIZE}
-                                    onPageChange={setPage}
-                              />
+                              <ListPagination page={currentPage} totalPages={totalPages} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
                         </>
                   )}
             </div>
