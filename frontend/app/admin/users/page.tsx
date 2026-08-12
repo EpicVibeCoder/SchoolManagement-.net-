@@ -185,7 +185,7 @@ export default function AdminUsersPage() {
                                           onChange={(e) => onSearchChange(e.target.value)}
                                     />
                                     <select
-                                          className="sm-input sm:max-w-[10rem]"
+                                          className="sm-input sm:max-w-40"
                                           value={roleFilter}
                                           onChange={(e) => onRoleFilterChange(e.target.value)}
                                     >

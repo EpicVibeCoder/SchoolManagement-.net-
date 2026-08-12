@@ -11,7 +11,7 @@ import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AssignmentDto, AssignmentStatus, del, get, post } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { formatDateTime } from "@/lib/format";
+import { dateInputToEndOfDayIso, formatDate } from "@/lib/format";
 import { PAGE_SIZE, paginate } from "@/lib/paginate";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
@@ -27,6 +27,15 @@ const assignmentSchema = z.object({
 
 type AssignmentFormInput = z.input<typeof assignmentSchema>;
 type AssignmentFormValues = z.output<typeof assignmentSchema>;
+
+const emptyForm: AssignmentFormInput = {
+      title: "",
+      description: "",
+      deadline: "",
+      maxMarks: 100,
+      classId: "",
+      subjectId: "",
+};
 
 export default function TeacherAssignmentsPage() {
       const queryClient = useQueryClient();
@@ -80,7 +89,7 @@ export default function TeacherAssignmentsPage() {
             formState: { errors },
       } = useForm<AssignmentFormInput, unknown, AssignmentFormValues>({
             resolver: zodResolver(assignmentSchema),
-            defaultValues: { title: "", description: "", deadline: "", maxMarks: 100, classId: "", subjectId: "" },
+            defaultValues: emptyForm,
       });
       const selectedClassId = useWatch({ control, name: "classId" });
       const classes = useMemo(() => {
@@ -122,9 +131,9 @@ export default function TeacherAssignmentsPage() {
             try {
                   await post("/api/assignments", {
                         ...values,
-                        deadline: new Date(values.deadline).toISOString(),
+                        deadline: dateInputToEndOfDayIso(values.deadline),
                   });
-                  reset({ title: "", description: "", deadline: "", maxMarks: 100, classId: "", subjectId: "" });
+                  reset(emptyForm);
                   setShowForm(false);
                   await refresh();
             } catch (err) {
@@ -222,7 +231,7 @@ export default function TeacherAssignmentsPage() {
                                           <label className="sm-label" htmlFor="deadline">
                                                 Deadline
                                           </label>
-                                          <input id="deadline" type="datetime-local" className="sm-input" {...register("deadline")} />
+                                          <input id="deadline" type="date" className="sm-input" {...register("deadline")} />
                                           {errors.deadline && <p className="mt-1 text-xs text-(--color-danger)">{errors.deadline.message}</p>}
                                     </div>
                                     <div>
@@ -281,7 +290,7 @@ export default function TeacherAssignmentsPage() {
                                                             <td>
                                                                   {a.className} · {a.subjectName}
                                                             </td>
-                                                            <td>{formatDateTime(a.deadline)}</td>
+                                                            <td>{formatDate(a.deadline)}</td>
                                                             <td>{a.submissionCount}</td>
                                                             <td>
                                                                   <AssignmentStatusBadge status={a.status} />

@@ -148,7 +148,7 @@ export default function NotificationsPage() {
                                           >
                                                 <div>
                                                       <div className="flex items-center gap-2">
-                                                            {!n.isRead && <span className="h-2 w-2 rounded-full bg-(--color-accent)" />}
+                                                            {!n.isRead && <span className="h-2 w-2 rounded-full bg-accent" />}
                                                             <p className="font-medium text-(--color-primary-dark)">{n.title}</p>
                                                       </div>
                                                       <p className="mt-1 text-sm text-(--color-ink-soft)">{n.body}</p>
