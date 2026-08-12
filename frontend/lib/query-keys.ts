@@ -1,7 +1,7 @@
 export const queryKeys = {
       subjects: ["subjects"] as const,
       classes: ["classes"] as const,
-      users: (search?: string, role?: string) => ["users", { search, role }] as const,
+      users: (search?: string, role?: string, page?: number) => ["users", { search, role, page }] as const,
       enrollments: (classId?: string) => ["enrollments", { classId }] as const,
       teacherAssignments: (teacherId?: string) => ["teacher-assignments", { teacherId }] as const,
       assignments: ["assignments"] as const,

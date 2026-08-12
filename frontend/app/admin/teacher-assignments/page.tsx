@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, ClassDto, PagedResult, SubjectDto, TeacherAssignmentDto, UserDto, UserRole, del, get, post } from "@/lib/api";
+import { PAGE_SIZE, paginate } from "@/lib/paginate";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -20,6 +22,8 @@ type AssignmentFormValues = z.infer<typeof assignmentSchema>;
 
 export default function TeacherAssignmentsPage() {
       const queryClient = useQueryClient();
+      const [search, setSearch] = useState("");
+      const [page, setPage] = useState(1);
       const [formError, setFormError] = useState<string | null>(null);
       const [actionError, setActionError] = useState<string | null>(null);
       const [submitting, setSubmitting] = useState(false);
@@ -53,6 +57,24 @@ export default function TeacherAssignmentsPage() {
       const loading = assignmentsQuery.isPending || teachersQuery.isPending || classesQuery.isPending || subjectsQuery.isPending;
       const firstError = assignmentsQuery.error ?? teachersQuery.error ?? classesQuery.error ?? subjectsQuery.error;
       const error = firstError instanceof ApiError ? firstError.message : firstError ? "Failed to load teacher assignments." : null;
+
+      const filtered = useMemo(() => {
+            const q = search.trim().toLowerCase();
+            if (!q) return assignments;
+            return assignments.filter(
+                  (a) =>
+                        a.teacherName.toLowerCase().includes(q) ||
+                        a.className.toLowerCase().includes(q) ||
+                        a.subjectName.toLowerCase().includes(q),
+            );
+      }, [assignments, search]);
+
+      const { pageItems, totalPages, currentPage, total } = paginate(filtered, page);
+
+      const onSearchChange = (value: string) => {
+            setSearch(value);
+            setPage(1);
+      };
 
       const {
             register,
@@ -157,50 +179,71 @@ export default function TeacherAssignmentsPage() {
                         </div>
 
                         <div className="lg:col-span-2 lg:order-1">
+                              <div className="mb-4">
+                                    <input
+                                          type="search"
+                                          className="sm-input sm:max-w-sm"
+                                          placeholder="Search by teacher, class, or subject…"
+                                          value={search}
+                                          onChange={(e) => onSearchChange(e.target.value)}
+                                    />
+                              </div>
+
                               {loading && <LoadingBlock label="Loading assignments…" />}
                               {(error || actionError) && <ErrorBlock message={error ?? actionError!} />}
 
                               {!loading && (
-                                    <div className="sm-card overflow-x-auto">
-                                          <table className="sm-table">
-                                                <thead>
-                                                      <tr>
-                                                            <th>Teacher</th>
-                                                            <th>Class</th>
-                                                            <th>Subject</th>
-                                                            <th></th>
-                                                      </tr>
-                                                </thead>
-                                                <tbody>
-                                                      {assignments.map((a) => (
-                                                            <tr key={a.id}>
-                                                                  <td className="font-medium text-(--color-primary-dark)">{a.teacherName}</td>
-                                                                  <td>{a.className}</td>
-                                                                  <td>{a.subjectName}</td>
-                                                                  <td>
-                                                                        <div className="flex justify-end">
-                                                                              <button
-                                                                                    type="button"
-                                                                                    className="sm-btn sm-btn-danger"
-                                                                                    disabled={busyId === a.id}
-                                                                                    onClick={() => remove(a.id)}
-                                                                              >
-                                                                                    Remove
-                                                                              </button>
-                                                                        </div>
-                                                                  </td>
-                                                            </tr>
-                                                      ))}
-                                                      {assignments.length === 0 && (
+                                    <>
+                                          <div className="sm-card overflow-x-auto">
+                                                <table className="sm-table">
+                                                      <thead>
                                                             <tr>
-                                                                  <td colSpan={4} className="text-center text-(--color-ink-soft)">
-                                                                        No teacher assignments yet.
-                                                                  </td>
+                                                                  <th>Teacher</th>
+                                                                  <th>Class</th>
+                                                                  <th>Subject</th>
+                                                                  <th></th>
                                                             </tr>
-                                                      )}
-                                                </tbody>
-                                          </table>
-                                    </div>
+                                                      </thead>
+                                                      <tbody>
+                                                            {pageItems.map((a) => (
+                                                                  <tr key={a.id}>
+                                                                        <td className="font-medium text-(--color-primary-dark)">{a.teacherName}</td>
+                                                                        <td>{a.className}</td>
+                                                                        <td>{a.subjectName}</td>
+                                                                        <td>
+                                                                              <div className="flex justify-end">
+                                                                                    <button
+                                                                                          type="button"
+                                                                                          className="sm-btn sm-btn-danger"
+                                                                                          disabled={busyId === a.id}
+                                                                                          onClick={() => remove(a.id)}
+                                                                                    >
+                                                                                          Remove
+                                                                                    </button>
+                                                                              </div>
+                                                                        </td>
+                                                                  </tr>
+                                                            ))}
+                                                            {pageItems.length === 0 && (
+                                                                  <tr>
+                                                                        <td colSpan={4} className="text-center text-(--color-ink-soft)">
+                                                                              {assignments.length === 0
+                                                                                    ? "No teacher assignments yet."
+                                                                                    : "No assignments match your search."}
+                                                                        </td>
+                                                                  </tr>
+                                                            )}
+                                                      </tbody>
+                                                </table>
+                                          </div>
+                                          <ListPagination
+                                                page={currentPage}
+                                                totalPages={totalPages}
+                                                total={total}
+                                                pageSize={PAGE_SIZE}
+                                                onPageChange={setPage}
+                                          />
+                                    </>
                               )}
                         </div>
                   </div>

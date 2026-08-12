@@ -6,11 +6,13 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AssignmentStatusBadge } from "@/components/Badge";
+import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AssignmentDto, AssignmentStatus, del, get, post } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
+import { PAGE_SIZE, paginate } from "@/lib/paginate";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -68,6 +70,8 @@ export default function TeacherAssignmentsPage() {
       const [submitting, setSubmitting] = useState(false);
       const [busyId, setBusyId] = useState<string | null>(null);
       const [showForm, setShowForm] = useState(false);
+      const [search, setSearch] = useState("");
+      const [page, setPage] = useState(1);
       const {
             register,
             handleSubmit,
@@ -88,6 +92,26 @@ export default function TeacherAssignmentsPage() {
             () => teachingAssignments.filter((t) => !selectedClassId || t.classId === selectedClassId),
             [teachingAssignments, selectedClassId],
       );
+
+      const filtered = useMemo(() => {
+            const q = search.trim().toLowerCase();
+            if (!q) return assignments;
+            return assignments.filter(
+                  (a) =>
+                        a.title.toLowerCase().includes(q) ||
+                        a.className.toLowerCase().includes(q) ||
+                        a.subjectName.toLowerCase().includes(q) ||
+                        a.status.toLowerCase().includes(q),
+            );
+      }, [assignments, search]);
+
+      const { pageItems, totalPages, currentPage, total } = paginate(filtered, page);
+
+      const onSearchChange = (value: string) => {
+            setSearch(value);
+            setPage(1);
+      };
+
       const refresh = async () => {
             await queryClient.invalidateQueries({ queryKey: queryKeys.assignments });
             await queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
@@ -221,69 +245,89 @@ export default function TeacherAssignmentsPage() {
                   {(error || actionError) && <ErrorBlock message={error ?? actionError!} />}
 
                   {!loading && (
-                        <div className="sm-card overflow-x-auto">
-                              <table className="sm-table">
-                                    <thead>
-                                          <tr>
-                                                <th>Title</th>
-                                                <th>Class / Subject</th>
-                                                <th>Deadline</th>
-                                                <th>Submissions</th>
-                                                <th>Status</th>
-                                                <th></th>
-                                          </tr>
-                                    </thead>
-                                    <tbody>
-                                          {assignments.map((a) => (
-                                                <tr key={a.id}>
-                                                      <td>
-                                                            <Link
-                                                                  href={`/teacher/assignments/${a.id}`}
-                                                                  className="font-medium text-(--color-primary-dark) hover:underline"
-                                                            >
-                                                                  {a.title}
-                                                            </Link>
-                                                      </td>
-                                                      <td>
-                                                            {a.className} · {a.subjectName}
-                                                      </td>
-                                                      <td>{formatDateTime(a.deadline)}</td>
-                                                      <td>{a.submissionCount}</td>
-                                                      <td>
-                                                            <AssignmentStatusBadge status={a.status} />
-                                                      </td>
-                                                      <td>
-                                                            <div className="flex justify-end gap-2">
-                                                                  <button
-                                                                        type="button"
-                                                                        className="sm-btn sm-btn-secondary"
-                                                                        disabled={busyId === a.id}
-                                                                        onClick={() => togglePublish(a)}
-                                                                  >
-                                                                        {a.status === AssignmentStatus.Published ? "Unpublish" : "Publish"}
-                                                                  </button>
-                                                                  <button
-                                                                        type="button"
-                                                                        className="sm-btn sm-btn-danger"
-                                                                        disabled={busyId === a.id}
-                                                                        onClick={() => remove(a.id)}
-                                                                  >
-                                                                        Delete
-                                                                  </button>
-                                                            </div>
-                                                      </td>
-                                                </tr>
-                                          ))}
-                                          {assignments.length === 0 && (
+                        <>
+                              <div className="mb-4">
+                                    <input
+                                          type="search"
+                                          className="sm-input sm:max-w-sm"
+                                          placeholder="Search by title, class, subject…"
+                                          value={search}
+                                          onChange={(e) => onSearchChange(e.target.value)}
+                                    />
+                              </div>
+                              <div className="sm-card overflow-x-auto">
+                                    <table className="sm-table">
+                                          <thead>
                                                 <tr>
-                                                      <td colSpan={6} className="text-center text-(--color-ink-soft)">
-                                                            No assignments yet. Create your first one above.
-                                                      </td>
+                                                      <th>Title</th>
+                                                      <th>Class / Subject</th>
+                                                      <th>Deadline</th>
+                                                      <th>Submissions</th>
+                                                      <th>Status</th>
+                                                      <th></th>
                                                 </tr>
-                                          )}
-                                    </tbody>
-                              </table>
-                        </div>
+                                          </thead>
+                                          <tbody>
+                                                {pageItems.map((a) => (
+                                                      <tr key={a.id}>
+                                                            <td>
+                                                                  <Link
+                                                                        href={`/teacher/assignments/${a.id}`}
+                                                                        className="font-[550] text-(--color-primary-dark) underline-offset-2 hover:text-(--color-primary-soft) hover:underline"
+                                                                  >
+                                                                        {a.title}
+                                                                  </Link>
+                                                            </td>
+                                                            <td>
+                                                                  {a.className} · {a.subjectName}
+                                                            </td>
+                                                            <td>{formatDateTime(a.deadline)}</td>
+                                                            <td>{a.submissionCount}</td>
+                                                            <td>
+                                                                  <AssignmentStatusBadge status={a.status} />
+                                                            </td>
+                                                            <td>
+                                                                  <div className="flex justify-end gap-2">
+                                                                        <button
+                                                                              type="button"
+                                                                              className="sm-btn sm-btn-secondary"
+                                                                              disabled={busyId === a.id}
+                                                                              onClick={() => togglePublish(a)}
+                                                                        >
+                                                                              {a.status === AssignmentStatus.Published ? "Unpublish" : "Publish"}
+                                                                        </button>
+                                                                        <button
+                                                                              type="button"
+                                                                              className="sm-btn sm-btn-danger"
+                                                                              disabled={busyId === a.id}
+                                                                              onClick={() => remove(a.id)}
+                                                                        >
+                                                                              Delete
+                                                                        </button>
+                                                                  </div>
+                                                            </td>
+                                                      </tr>
+                                                ))}
+                                                {pageItems.length === 0 && (
+                                                      <tr>
+                                                            <td colSpan={6} className="text-center text-(--color-ink-soft)">
+                                                                  {assignments.length === 0
+                                                                        ? "No assignments yet. Create your first one above."
+                                                                        : "No assignments match your search."}
+                                                            </td>
+                                                      </tr>
+                                                )}
+                                          </tbody>
+                                    </table>
+                              </div>
+                              <ListPagination
+                                    page={currentPage}
+                                    totalPages={totalPages}
+                                    total={total}
+                                    pageSize={PAGE_SIZE}
+                                    onPageChange={setPage}
+                              />
+                        </>
                   )}
             </div>
       );

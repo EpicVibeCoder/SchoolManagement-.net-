@@ -105,7 +105,7 @@ export default function StudentDashboardPage() {
                                                             <td>
                                                                   <Link
                                                                         href={`/student/assignments/${a.id}`}
-                                                                        className="font-medium text-(--color-primary-dark) hover:underline"
+                                                                        className="font-[550] text-(--color-primary-dark) underline-offset-2 hover:text-(--color-primary-soft) hover:underline"
                                                                   >
                                                                         {a.title}
                                                                   </Link>

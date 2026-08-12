@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, NotificationDto, get, put } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
+import { PAGE_SIZE, paginate } from "@/lib/paginate";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -17,6 +19,8 @@ export default function NotificationsPage() {
       const queryClient = useQueryClient();
       const [busyId, setBusyId] = useState<string | null>(null);
       const [actionError, setActionError] = useState<string | null>(null);
+      const [search, setSearch] = useState("");
+      const [page, setPage] = useState(1);
 
       useEffect(() => {
             if (!authLoading && !user) {
@@ -34,6 +38,21 @@ export default function NotificationsPage() {
             if (!notificationsQuery.data) return [];
             return [...notificationsQuery.data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       }, [notificationsQuery.data]);
+
+      const filtered = useMemo(() => {
+            const q = search.trim().toLowerCase();
+            if (!q) return notifications;
+            return notifications.filter(
+                  (n) => n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q),
+            );
+      }, [notifications, search]);
+
+      const { pageItems, totalPages, currentPage, total } = paginate(filtered, page);
+
+      const onSearchChange = (value: string) => {
+            setSearch(value);
+            setPage(1);
+      };
 
       const loading = notificationsQuery.isPending;
       const error =
@@ -111,36 +130,58 @@ export default function NotificationsPage() {
                   {error && <ErrorBlock message={error} />}
 
                   {!loading && (
-                        <div className="space-y-2">
-                              {notifications.map((n) => (
-                                    <div
-                                          key={n.id}
-                                          className={`sm-card flex items-start justify-between gap-4 p-4 ${n.isRead ? "" : "border-(--color-primary-soft)"}`}
-                                    >
-                                          <div>
-                                                <div className="flex items-center gap-2">
-                                                      {!n.isRead && <span className="h-2 w-2 rounded-full bg-(--color-accent)" />}
-                                                      <p className="font-medium text-(--color-primary-dark)">{n.title}</p>
+                        <>
+                              <div className="mb-4">
+                                    <input
+                                          type="search"
+                                          className="sm-input sm:max-w-sm"
+                                          placeholder="Search notifications…"
+                                          value={search}
+                                          onChange={(e) => onSearchChange(e.target.value)}
+                                    />
+                              </div>
+                              <div className="space-y-2">
+                                    {pageItems.map((n) => (
+                                          <div
+                                                key={n.id}
+                                                className={`sm-card flex items-start justify-between gap-4 p-4 ${n.isRead ? "" : "border-(--color-primary-soft)"}`}
+                                          >
+                                                <div>
+                                                      <div className="flex items-center gap-2">
+                                                            {!n.isRead && <span className="h-2 w-2 rounded-full bg-(--color-accent)" />}
+                                                            <p className="font-medium text-(--color-primary-dark)">{n.title}</p>
+                                                      </div>
+                                                      <p className="mt-1 text-sm text-(--color-ink-soft)">{n.body}</p>
+                                                      <p className="mt-2 text-xs text-(--color-muted)">{formatDateTime(n.createdAt)}</p>
                                                 </div>
-                                                <p className="mt-1 text-sm text-(--color-ink-soft)">{n.body}</p>
-                                                <p className="mt-2 text-xs text-(--color-muted)">{formatDateTime(n.createdAt)}</p>
+                                                {!n.isRead && (
+                                                      <button
+                                                            type="button"
+                                                            className="sm-btn sm-btn-secondary shrink-0"
+                                                            disabled={busyId === n.id}
+                                                            onClick={() => markRead(n.id)}
+                                                      >
+                                                            Mark read
+                                                      </button>
+                                                )}
                                           </div>
-                                          {!n.isRead && (
-                                                <button
-                                                      type="button"
-                                                      className="sm-btn sm-btn-secondary shrink-0"
-                                                      disabled={busyId === n.id}
-                                                      onClick={() => markRead(n.id)}
-                                                >
-                                                      Mark read
-                                                </button>
-                                          )}
-                                    </div>
-                              ))}
-                              {notifications.length === 0 && (
-                                    <div className="sm-card p-8 text-center text-sm text-(--color-ink-soft)">No notifications yet.</div>
-                              )}
-                        </div>
+                                    ))}
+                                    {pageItems.length === 0 && (
+                                          <div className="sm-card p-8 text-center text-sm text-(--color-ink-soft)">
+                                                {notifications.length === 0
+                                                      ? "No notifications yet."
+                                                      : "No notifications match your search."}
+                                          </div>
+                                    )}
+                              </div>
+                              <ListPagination
+                                    page={currentPage}
+                                    totalPages={totalPages}
+                                    total={total}
+                                    pageSize={PAGE_SIZE}
+                                    onPageChange={setPage}
+                              />
+                        </>
                   )}
             </AppShell>
       );

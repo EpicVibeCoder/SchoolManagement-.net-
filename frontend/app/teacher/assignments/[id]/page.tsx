@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { AssignmentStatusBadge, SubmissionStatusBadge } from "@/components/Badge";
+import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AssignmentDto, SubmissionDto, get, put } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
+import { PAGE_SIZE, paginate } from "@/lib/paginate";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
+
 interface GradeDraft {
       marks: string;
       feedback: string;
@@ -22,6 +25,8 @@ export default function TeacherAssignmentDetailPage() {
       const [drafts, setDrafts] = useState<Record<string, GradeDraft>>({});
       const [savingId, setSavingId] = useState<string | null>(null);
       const [rowError, setRowError] = useState<Record<string, string>>({});
+      const [search, setSearch] = useState("");
+      const [page, setPage] = useState(1);
 
       const queryClient = useQueryClient();
       const assignmentId = params.id;
@@ -47,6 +52,24 @@ export default function TeacherAssignmentDetailPage() {
                       ? "Failed to load assignment."
                       : null;
 
+      const filtered = useMemo(() => {
+            const q = search.trim().toLowerCase();
+            if (!q) return submissions;
+            return submissions.filter(
+                  (s) =>
+                        s.studentName.toLowerCase().includes(q) ||
+                        s.status.toLowerCase().includes(q) ||
+                        s.answer.toLowerCase().includes(q),
+            );
+      }, [submissions, search]);
+
+      const { pageItems, totalPages, currentPage, total } = paginate(filtered, page);
+
+      const onSearchChange = (value: string) => {
+            setSearch(value);
+            setPage(1);
+      };
+
       useEffect(() => {
             if (!submissionsQuery.data) return;
             setDrafts((prev) => {
@@ -59,6 +82,7 @@ export default function TeacherAssignmentDetailPage() {
                   return next;
             });
       }, [submissionsQuery.data]);
+
       const updateDraft = (id: string, field: keyof GradeDraft, value: string) => {
             setDrafts((prev) => ({
                   ...prev,
@@ -134,9 +158,18 @@ export default function TeacherAssignmentDetailPage() {
                         </div>
                   </div>
 
-                  <h2 className="mb-3 text-lg font-semibold">Submissions</h2>
+                  <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <h2 className="text-lg font-semibold">Submissions</h2>
+                        <input
+                              type="search"
+                              className="sm-input sm:max-w-xs"
+                              placeholder="Search by student or status…"
+                              value={search}
+                              onChange={(e) => onSearchChange(e.target.value)}
+                        />
+                  </div>
                   <div className="space-y-3">
-                        {submissions.map((s) => (
+                        {pageItems.map((s) => (
                               <div key={s.id} className="sm-card p-4">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                           <div>
@@ -185,10 +218,19 @@ export default function TeacherAssignmentDetailPage() {
                                     {rowError[s.id] && <p className="mt-2 text-xs text-(--color-danger)">{rowError[s.id]}</p>}
                               </div>
                         ))}
-                        {submissions.length === 0 && (
-                              <div className="sm-card p-8 text-center text-sm text-(--color-ink-soft)">No submissions yet.</div>
+                        {pageItems.length === 0 && (
+                              <div className="sm-card p-8 text-center text-sm text-(--color-ink-soft)">
+                                    {submissions.length === 0 ? "No submissions yet." : "No submissions match your search."}
+                              </div>
                         )}
                   </div>
+                  <ListPagination
+                        page={currentPage}
+                        totalPages={totalPages}
+                        total={total}
+                        pageSize={PAGE_SIZE}
+                        onPageChange={setPage}
+                  />
 
                   <div className="mt-6">
                         <Link href="/teacher/assignments" className="sm-btn sm-btn-secondary">

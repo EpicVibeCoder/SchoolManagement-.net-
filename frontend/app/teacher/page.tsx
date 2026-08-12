@@ -103,7 +103,7 @@ export default function TeacherDashboardPage() {
                                                       <td>
                                                             <Link
                                                                   href={`/teacher/assignments/${a.id}`}
-                                                                  className="font-medium text-(--color-primary-dark) hover:underline"
+                                                                  className="font-[550] text-(--color-primary-dark) underline-offset-2 hover:text-(--color-primary-soft) hover:underline"
                                                             >
                                                                   {a.title}
                                                             </Link>

@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, ClassDto, del, get, post, put } from "@/lib/api";
+import { PAGE_SIZE, paginate } from "@/lib/paginate";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -39,17 +41,30 @@ export default function AdminClassesPage() {
       });
       const errorMessage = error instanceof ApiError ? error.message : error ? "Failed to load classes." : null;
       const [search, setSearch] = useState("");
+      const [page, setPage] = useState(1);
       const [formError, setFormError] = useState<string | null>(null);
       const [actionError, setActionError] = useState<string | null>(null);
       const [submitting, setSubmitting] = useState(false);
       const [editingId, setEditingId] = useState<string | null>(null);
       const [busyId, setBusyId] = useState<string | null>(null);
 
-      const filteredClasses = classes.filter((klass) => {
+      const filteredClasses = useMemo(() => {
             const q = search.trim().toLowerCase();
-            if (!q) return true;
-            return klass.name.toLowerCase().includes(q) || klass.code.toLowerCase().includes(q) || klass.academicYear.toLowerCase().includes(q);
-      });
+            if (!q) return classes;
+            return classes.filter(
+                  (klass) =>
+                        klass.name.toLowerCase().includes(q) ||
+                        klass.code.toLowerCase().includes(q) ||
+                        klass.academicYear.toLowerCase().includes(q),
+            );
+      }, [classes, search]);
+
+      const { pageItems, totalPages, currentPage, total } = paginate(filteredClasses, page);
+
+      const onSearchChange = (value: string) => {
+            setSearch(value);
+            setPage(1);
+      };
 
       const parseAcademicYear = (academicYear: string) => {
             const parts = academicYear.split("-").map((s) => s.trim());
@@ -218,13 +233,13 @@ export default function AdminClassesPage() {
                         </div>
 
                         <div className="lg:col-span-2 lg:order-1">
-                              <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+                              <div className="mb-4">
                                     <input
-                                          type="text"
-                                          className="sm-input sm:max-w-xs"
+                                          type="search"
+                                          className="sm-input sm:max-w-sm"
                                           placeholder="Search by name, code, or year…"
                                           value={search}
-                                          onChange={(e) => setSearch(e.target.value)}
+                                          onChange={(e) => onSearchChange(e.target.value)}
                                     />
                               </div>
 
@@ -232,60 +247,62 @@ export default function AdminClassesPage() {
                               {(errorMessage || actionError) && <ErrorBlock message={errorMessage ?? actionError!} />}
 
                               {!loading && (
-                                    <div className="sm-card overflow-x-auto">
-                                          <table className="sm-table">
-                                                <thead>
-                                                      <tr>
-                                                            <th>Name</th>
-                                                            <th>Code</th>
-                                                            <th>Academic Year</th>
-                                                            <th></th>
-                                                      </tr>
-                                                </thead>
-                                                <tbody>
-                                                      {filteredClasses.map((klass) => (
-                                                            <tr key={klass.id}>
-                                                                  <td className="font-medium text-(--color-primary-dark)">{klass.name}</td>
-                                                                  <td>{klass.code}</td>
-                                                                  <td>{klass.academicYear}</td>
-                                                                  <td>
-                                                                        <div className="flex justify-end gap-2">
-                                                                              <button
-                                                                                    type="button"
-                                                                                    className="sm-btn sm-btn-secondary"
-                                                                                    onClick={() => startEdit(klass)}
-                                                                              >
-                                                                                    Edit
-                                                                              </button>
-                                                                              <button
-                                                                                    type="button"
-                                                                                    className="sm-btn sm-btn-danger"
-                                                                                    disabled={busyId === klass.id}
-                                                                                    onClick={() => remove(klass.id)}
-                                                                              >
-                                                                                    Delete
-                                                                              </button>
-                                                                        </div>
-                                                                  </td>
-                                                            </tr>
-                                                      ))}
-                                                      {classes.length === 0 && (
+                                    <>
+                                          <div className="sm-card overflow-x-auto">
+                                                <table className="sm-table">
+                                                      <thead>
                                                             <tr>
-                                                                  <td colSpan={4} className="text-center text-(--color-ink-soft)">
-                                                                        No classes yet.
-                                                                  </td>
+                                                                  <th>Name</th>
+                                                                  <th>Code</th>
+                                                                  <th>Academic Year</th>
+                                                                  <th></th>
                                                             </tr>
-                                                      )}
-                                                      {classes.length > 0 && filteredClasses.length === 0 && (
-                                                            <tr>
-                                                                  <td colSpan={4} className="text-center text-(--color-ink-soft)">
-                                                                        No classes match your search.
-                                                                  </td>
-                                                            </tr>
-                                                      )}
-                                                </tbody>
-                                          </table>
-                                    </div>
+                                                      </thead>
+                                                      <tbody>
+                                                            {pageItems.map((klass) => (
+                                                                  <tr key={klass.id}>
+                                                                        <td className="font-medium text-(--color-primary-dark)">{klass.name}</td>
+                                                                        <td>{klass.code}</td>
+                                                                        <td>{klass.academicYear}</td>
+                                                                        <td>
+                                                                              <div className="flex justify-end gap-2">
+                                                                                    <button
+                                                                                          type="button"
+                                                                                          className="sm-btn sm-btn-secondary"
+                                                                                          onClick={() => startEdit(klass)}
+                                                                                    >
+                                                                                          Edit
+                                                                                    </button>
+                                                                                    <button
+                                                                                          type="button"
+                                                                                          className="sm-btn sm-btn-danger"
+                                                                                          disabled={busyId === klass.id}
+                                                                                          onClick={() => remove(klass.id)}
+                                                                                    >
+                                                                                          Delete
+                                                                                    </button>
+                                                                              </div>
+                                                                        </td>
+                                                                  </tr>
+                                                            ))}
+                                                            {pageItems.length === 0 && (
+                                                                  <tr>
+                                                                        <td colSpan={4} className="text-center text-(--color-ink-soft)">
+                                                                              {classes.length === 0 ? "No classes yet." : "No classes match your search."}
+                                                                        </td>
+                                                                  </tr>
+                                                            )}
+                                                      </tbody>
+                                                </table>
+                                          </div>
+                                          <ListPagination
+                                                page={currentPage}
+                                                totalPages={totalPages}
+                                                total={total}
+                                                pageSize={PAGE_SIZE}
+                                                onPageChange={setPage}
+                                          />
+                                    </>
                               )}
                         </div>
                   </div>

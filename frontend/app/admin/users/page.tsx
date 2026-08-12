@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ActiveBadge, RoleBadge } from "@/components/Badge";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, CreateUserRequest, PagedResult, UserDto, UserRole, del, get, post, put, userRoleOptions } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { PAGE_SIZE } from "@/lib/paginate";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -24,6 +26,7 @@ type CreateUserFormValues = z.infer<typeof createUserSchema>;
 export default function AdminUsersPage() {
       const queryClient = useQueryClient();
       const [search, setSearch] = useState("");
+      const [page, setPage] = useState(1);
       const [roleFilter, setRoleFilter] = useState<string>("");
       const [formError, setFormError] = useState<string | null>(null);
       const [actionError, setActionError] = useState<string | null>(null);
@@ -35,17 +38,31 @@ export default function AdminUsersPage() {
             isPending: loading,
             error,
       } = useQuery({
-            queryKey: queryKeys.users(search, roleFilter || undefined),
+            queryKey: queryKeys.users(search, roleFilter || undefined, page),
             queryFn: () => {
                   const params = new URLSearchParams();
                   if (search) params.set("search", search);
                   if (roleFilter !== "") params.set("role", roleFilter);
-                  params.set("page", "1");
-                  params.set("pageSize", "50");
+                  params.set("page", String(page));
+                  params.set("pageSize", String(PAGE_SIZE));
                   return get<PagedResult<UserDto>>(`/api/users?${params.toString()}`);
             },
       });
       const errorMessage = error instanceof ApiError ? error.message : error ? "Failed to load users." : null;
+
+      const total = result?.total ?? 0;
+      const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      const currentPage = Math.min(page, totalPages);
+
+      const onSearchChange = (value: string) => {
+            setSearch(value);
+            setPage(1);
+      };
+
+      const onRoleFilterChange = (value: string) => {
+            setRoleFilter(value);
+            setPage(1);
+      };
 
       const {
             register,
@@ -161,12 +178,17 @@ export default function AdminUsersPage() {
                         <div className="lg:col-span-2 lg:order-1">
                               <div className="mb-4 flex flex-col gap-2 sm:flex-row">
                                     <input
+                                          type="search"
                                           className="sm-input sm:max-w-xs"
                                           placeholder="Search by name or email…"
                                           value={search}
-                                          onChange={(e) => setSearch(e.target.value)}
+                                          onChange={(e) => onSearchChange(e.target.value)}
                                     />
-                                    <select className="sm-input sm:max-w-[10rem]" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+                                    <select
+                                          className="sm-input sm:max-w-[10rem]"
+                                          value={roleFilter}
+                                          onChange={(e) => onRoleFilterChange(e.target.value)}
+                                    >
                                           <option value="">All roles</option>
                                           {userRoleOptions.map((opt) => (
                                                 <option key={opt.value} value={opt.value}>
@@ -180,64 +202,75 @@ export default function AdminUsersPage() {
                               {(errorMessage || actionError) && <ErrorBlock message={errorMessage ?? actionError!} />}
 
                               {result && !loading && (
-                                    <div className="sm-card overflow-x-auto">
-                                          <table className="sm-table">
-                                                <thead>
-                                                      <tr>
-                                                            <th>Name</th>
-                                                            <th>Email</th>
-                                                            <th>Role</th>
-                                                            <th>Status</th>
-                                                            <th>Joined</th>
-                                                            <th></th>
-                                                      </tr>
-                                                </thead>
-                                                <tbody>
-                                                      {result.items.map((u) => (
-                                                            <tr key={u.id}>
-                                                                  <td className="font-medium text-(--color-primary-dark)">{u.fullName}</td>
-                                                                  <td>{u.email}</td>
-                                                                  <td>
-                                                                        <RoleBadge role={u.role} />
-                                                                  </td>
-                                                                  <td>
-                                                                        <ActiveBadge active={u.isActive} />
-                                                                  </td>
-                                                                  <td>{formatDate(u.createdAt)}</td>
-                                                                  <td>
-                                                                        <div className="flex justify-end gap-2">
-                                                                              <button
-                                                                                    type="button"
-                                                                                    className="sm-btn sm-btn-secondary"
-                                                                                    disabled={busyId === u.id}
-                                                                                    onClick={() => toggleActive(u)}
-                                                                              >
-                                                                                    {u.isActive ? "Deactivate" : "Activate"}
-                                                                              </button>
-                                                                              {u.isActive && (
+                                    <>
+                                          <div className="sm-card overflow-x-auto">
+                                                <table className="sm-table">
+                                                      <thead>
+                                                            <tr>
+                                                                  <th>Name</th>
+                                                                  <th>Email</th>
+                                                                  <th>Role</th>
+                                                                  <th>Status</th>
+                                                                  <th>Joined</th>
+                                                                  <th></th>
+                                                            </tr>
+                                                      </thead>
+                                                      <tbody>
+                                                            {result.items.map((u) => (
+                                                                  <tr key={u.id}>
+                                                                        <td className="font-medium text-(--color-primary-dark)">{u.fullName}</td>
+                                                                        <td>{u.email}</td>
+                                                                        <td>
+                                                                              <RoleBadge role={u.role} />
+                                                                        </td>
+                                                                        <td>
+                                                                              <ActiveBadge active={u.isActive} />
+                                                                        </td>
+                                                                        <td>{formatDate(u.createdAt)}</td>
+                                                                        <td>
+                                                                              <div className="flex justify-end gap-2">
                                                                                     <button
                                                                                           type="button"
-                                                                                          className="sm-btn sm-btn-danger"
+                                                                                          className="sm-btn sm-btn-secondary"
                                                                                           disabled={busyId === u.id}
-                                                                                          onClick={() => deactivate(u.id)}
+                                                                                          onClick={() => toggleActive(u)}
                                                                                     >
-                                                                                          Remove
+                                                                                          {u.isActive ? "Deactivate" : "Activate"}
                                                                                     </button>
-                                                                              )}
-                                                                        </div>
-                                                                  </td>
-                                                            </tr>
-                                                      ))}
-                                                      {result.items.length === 0 && (
-                                                            <tr>
-                                                                  <td colSpan={6} className="text-center text-(--color-ink-soft)">
-                                                                        No users found.
-                                                                  </td>
-                                                            </tr>
-                                                      )}
-                                                </tbody>
-                                          </table>
-                                    </div>
+                                                                                    {u.isActive && (
+                                                                                          <button
+                                                                                                type="button"
+                                                                                                className="sm-btn sm-btn-danger"
+                                                                                                disabled={busyId === u.id}
+                                                                                                onClick={() => deactivate(u.id)}
+                                                                                          >
+                                                                                                Remove
+                                                                                          </button>
+                                                                                    )}
+                                                                              </div>
+                                                                        </td>
+                                                                  </tr>
+                                                            ))}
+                                                            {result.items.length === 0 && (
+                                                                  <tr>
+                                                                        <td colSpan={6} className="text-center text-(--color-ink-soft)">
+                                                                              {search || roleFilter
+                                                                                    ? "No users match your search."
+                                                                                    : "No users found."}
+                                                                        </td>
+                                                                  </tr>
+                                                            )}
+                                                      </tbody>
+                                                </table>
+                                          </div>
+                                          <ListPagination
+                                                page={currentPage}
+                                                totalPages={totalPages}
+                                                total={total}
+                                                pageSize={PAGE_SIZE}
+                                                onPageChange={setPage}
+                                          />
+                                    </>
                               )}
                         </div>
                   </div>

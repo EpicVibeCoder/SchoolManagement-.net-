@@ -4,13 +4,13 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { AssignmentStatusBadge } from "@/components/Badge";
+import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AssignmentDto, get } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
+import { PAGE_SIZE, paginate } from "@/lib/paginate";
 import { queryKeys } from "@/lib/query-keys";
-
-const PAGE_SIZE = 10;
 
 export default function AdminAssignmentsPage() {
       const [search, setSearch] = useState("");
@@ -40,9 +40,7 @@ export default function AdminAssignmentsPage() {
             );
       }, [assignments, search]);
 
-      const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-      const currentPage = Math.min(page, totalPages);
-      const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+      const { pageItems, totalPages, currentPage, total } = paginate(filtered, page);
 
       const onSearchChange = (value: string) => {
             setSearch(value);
@@ -115,35 +113,13 @@ export default function AdminAssignmentsPage() {
                                     </table>
                               </div>
 
-                              {filtered.length > 0 && (
-                                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-                                          <p className="text-(--color-ink-soft)">
-                                                Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of{" "}
-                                                {filtered.length}
-                                          </p>
-                                          <div className="flex items-center gap-2">
-                                                <button
-                                                      type="button"
-                                                      className="sm-btn sm-btn-secondary"
-                                                      disabled={currentPage <= 1}
-                                                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                                >
-                                                      Previous
-                                                </button>
-                                                <span className="text-(--color-ink-soft)">
-                                                      Page {currentPage} of {totalPages}
-                                                </span>
-                                                <button
-                                                      type="button"
-                                                      className="sm-btn sm-btn-secondary"
-                                                      disabled={currentPage >= totalPages}
-                                                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                                >
-                                                      Next
-                                                </button>
-                                          </div>
-                                    </div>
-                              )}
+                              <ListPagination
+                                    page={currentPage}
+                                    totalPages={totalPages}
+                                    total={total}
+                                    pageSize={PAGE_SIZE}
+                                    onPageChange={setPage}
+                              />
                         </>
                   )}
             </div>

@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, SubjectDto, del, get, post, put } from "@/lib/api";
+import { PAGE_SIZE, paginate } from "@/lib/paginate";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -28,11 +30,26 @@ export default function AdminSubjectsPage() {
             queryFn: () => get<SubjectDto[]>("/api/subjects"),
       });
       const errorMessage = error instanceof ApiError ? error.message : error ? "Failed to load subjects." : null;
+      const [search, setSearch] = useState("");
+      const [page, setPage] = useState(1);
       const [formError, setFormError] = useState<string | null>(null);
       const [submitting, setSubmitting] = useState(false);
       const [editingId, setEditingId] = useState<string | null>(null);
       const [busyId, setBusyId] = useState<string | null>(null);
       const [actionError, setActionError] = useState<string | null>(null);
+
+      const filtered = useMemo(() => {
+            const q = search.trim().toLowerCase();
+            if (!q) return subjects;
+            return subjects.filter((s) => s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q));
+      }, [subjects, search]);
+
+      const { pageItems, totalPages, currentPage, total } = paginate(filtered, page);
+
+      const onSearchChange = (value: string) => {
+            setSearch(value);
+            setPage(1);
+      };
 
       const {
             register,
@@ -123,55 +140,76 @@ export default function AdminSubjectsPage() {
                         </div>
 
                         <div className="lg:col-span-2 lg:order-1">
+                              <div className="mb-4">
+                                    <input
+                                          type="search"
+                                          className="sm-input sm:max-w-sm"
+                                          placeholder="Search by name or code…"
+                                          value={search}
+                                          onChange={(e) => onSearchChange(e.target.value)}
+                                    />
+                              </div>
+
                               {loading && <LoadingBlock label="Loading subjects…" />}
-                              {error && <ErrorBlock message={errorMessage ?? actionError!} />}
+                              {(errorMessage || actionError) && <ErrorBlock message={errorMessage ?? actionError!} />}
 
                               {!loading && (
-                                    <div className="sm-card overflow-x-auto">
-                                          <table className="sm-table">
-                                                <thead>
-                                                      <tr>
-                                                            <th>Name</th>
-                                                            <th>Code</th>
-                                                            <th></th>
-                                                      </tr>
-                                                </thead>
-                                                <tbody>
-                                                      {subjects.map((subject) => (
-                                                            <tr key={subject.id}>
-                                                                  <td className="font-medium text-(--color-primary-dark)">{subject.name}</td>
-                                                                  <td>{subject.code}</td>
-                                                                  <td>
-                                                                        <div className="flex justify-end gap-2">
-                                                                              <button
-                                                                                    type="button"
-                                                                                    className="sm-btn sm-btn-secondary"
-                                                                                    onClick={() => startEdit(subject)}
-                                                                              >
-                                                                                    Edit
-                                                                              </button>
-                                                                              <button
-                                                                                    type="button"
-                                                                                    className="sm-btn sm-btn-danger"
-                                                                                    disabled={busyId === subject.id}
-                                                                                    onClick={() => remove(subject.id)}
-                                                                              >
-                                                                                    Delete
-                                                                              </button>
-                                                                        </div>
-                                                                  </td>
-                                                            </tr>
-                                                      ))}
-                                                      {subjects.length === 0 && (
+                                    <>
+                                          <div className="sm-card overflow-x-auto">
+                                                <table className="sm-table">
+                                                      <thead>
                                                             <tr>
-                                                                  <td colSpan={3} className="text-center text-(--color-ink-soft)">
-                                                                        No subjects yet.
-                                                                  </td>
+                                                                  <th>Name</th>
+                                                                  <th>Code</th>
+                                                                  <th></th>
                                                             </tr>
-                                                      )}
-                                                </tbody>
-                                          </table>
-                                    </div>
+                                                      </thead>
+                                                      <tbody>
+                                                            {pageItems.map((subject) => (
+                                                                  <tr key={subject.id}>
+                                                                        <td className="font-medium text-(--color-primary-dark)">{subject.name}</td>
+                                                                        <td>{subject.code}</td>
+                                                                        <td>
+                                                                              <div className="flex justify-end gap-2">
+                                                                                    <button
+                                                                                          type="button"
+                                                                                          className="sm-btn sm-btn-secondary"
+                                                                                          onClick={() => startEdit(subject)}
+                                                                                    >
+                                                                                          Edit
+                                                                                    </button>
+                                                                                    <button
+                                                                                          type="button"
+                                                                                          className="sm-btn sm-btn-danger"
+                                                                                          disabled={busyId === subject.id}
+                                                                                          onClick={() => remove(subject.id)}
+                                                                                    >
+                                                                                          Delete
+                                                                                    </button>
+                                                                              </div>
+                                                                        </td>
+                                                                  </tr>
+                                                            ))}
+                                                            {pageItems.length === 0 && (
+                                                                  <tr>
+                                                                        <td colSpan={3} className="text-center text-(--color-ink-soft)">
+                                                                              {subjects.length === 0
+                                                                                    ? "No subjects yet."
+                                                                                    : "No subjects match your search."}
+                                                                        </td>
+                                                                  </tr>
+                                                            )}
+                                                      </tbody>
+                                                </table>
+                                          </div>
+                                          <ListPagination
+                                                page={currentPage}
+                                                totalPages={totalPages}
+                                                total={total}
+                                                pageSize={PAGE_SIZE}
+                                                onPageChange={setPage}
+                                          />
+                                    </>
                               )}
                         </div>
                   </div>

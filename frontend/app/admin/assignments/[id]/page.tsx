@@ -1,19 +1,24 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { AssignmentStatusBadge, SubmissionStatusBadge } from "@/components/Badge";
+import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AssignmentDto, SubmissionDto, get } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
+import { PAGE_SIZE, paginate } from "@/lib/paginate";
 import { queryKeys } from "@/lib/query-keys";
 
 export default function AdminAssignmentDetailPage() {
       const params = useParams<{ id: string }>();
       const router = useRouter();
       const assignmentId = params.id;
+      const [search, setSearch] = useState("");
+      const [page, setPage] = useState(1);
 
       const assignmentQuery = useQuery({
             queryKey: queryKeys.assignment(assignmentId),
@@ -37,6 +42,23 @@ export default function AdminAssignmentDetailPage() {
                     : assignmentQuery.error || submissionsQuery.error
                       ? "Failed to load assignment."
                       : null;
+
+      const filtered = useMemo(() => {
+            const q = search.trim().toLowerCase();
+            if (!q) return submissions;
+            return submissions.filter(
+                  (s) =>
+                        s.studentName.toLowerCase().includes(q) ||
+                        s.status.toLowerCase().includes(q),
+            );
+      }, [submissions, search]);
+
+      const { pageItems, totalPages, currentPage, total } = paginate(filtered, page);
+
+      const onSearchChange = (value: string) => {
+            setSearch(value);
+            setPage(1);
+      };
 
       if (loading) return <LoadingBlock label="Loading assignment…" />;
       if (error) return <ErrorBlock message={error} />;
@@ -77,7 +99,16 @@ export default function AdminAssignmentDetailPage() {
                         </div>
                   </div>
 
-                  <h2 className="mb-3 text-lg font-semibold">Student submissions</h2>
+                  <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <h2 className="text-lg font-semibold">Student submissions</h2>
+                        <input
+                              type="search"
+                              className="sm-input sm:max-w-xs"
+                              placeholder="Search by student or status…"
+                              value={search}
+                              onChange={(e) => onSearchChange(e.target.value)}
+                        />
+                  </div>
                   <div className="sm-card overflow-x-auto">
                         <table className="sm-table">
                               <thead>
@@ -89,7 +120,7 @@ export default function AdminAssignmentDetailPage() {
                                     </tr>
                               </thead>
                               <tbody>
-                                    {submissions.map((s) => (
+                                    {pageItems.map((s) => (
                                           <tr key={s.id}>
                                                 <td>
                                                       <Link
@@ -106,16 +137,25 @@ export default function AdminAssignmentDetailPage() {
                                                 <td>{s.marks !== null ? `${s.marks} / ${s.maxMarks}` : "—"}</td>
                                           </tr>
                                     ))}
-                                    {submissions.length === 0 && (
+                                    {pageItems.length === 0 && (
                                           <tr>
                                                 <td colSpan={4} className="text-center text-(--color-ink-soft)">
-                                                      No submissions yet.
+                                                      {submissions.length === 0
+                                                            ? "No submissions yet."
+                                                            : "No submissions match your search."}
                                                 </td>
                                           </tr>
                                     )}
                               </tbody>
                         </table>
                   </div>
+                  <ListPagination
+                        page={currentPage}
+                        totalPages={totalPages}
+                        total={total}
+                        pageSize={PAGE_SIZE}
+                        onPageChange={setPage}
+                  />
             </div>
       );
 }

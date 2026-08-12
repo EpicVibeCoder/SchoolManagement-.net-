@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, ClassDto, EnrollmentDto, PagedResult, UserDto, UserRole, del, get, post } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { PAGE_SIZE, paginate } from "@/lib/paginate";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -20,6 +22,8 @@ type EnrollmentFormValues = z.infer<typeof enrollmentSchema>;
 
 export default function EnrollmentsPage() {
       const queryClient = useQueryClient();
+      const [search, setSearch] = useState("");
+      const [page, setPage] = useState(1);
       const [classFilter, setClassFilter] = useState("");
       const [formError, setFormError] = useState<string | null>(null);
       const [actionError, setActionError] = useState<string | null>(null);
@@ -52,6 +56,26 @@ export default function EnrollmentsPage() {
                   : enrollmentsQuery.error
                     ? "Failed to load enrollments."
                     : null;
+
+      const filtered = useMemo(() => {
+            const q = search.trim().toLowerCase();
+            if (!q) return enrollments;
+            return enrollments.filter(
+                  (e) => e.studentName.toLowerCase().includes(q) || e.className.toLowerCase().includes(q),
+            );
+      }, [enrollments, search]);
+
+      const { pageItems, totalPages, currentPage, total } = paginate(filtered, page);
+
+      const onSearchChange = (value: string) => {
+            setSearch(value);
+            setPage(1);
+      };
+
+      const onClassFilterChange = (value: string) => {
+            setClassFilter(value);
+            setPage(1);
+      };
 
       const {
             register,
@@ -134,8 +158,19 @@ export default function EnrollmentsPage() {
                         </div>
 
                         <div className="lg:col-span-2 lg:order-1">
-                              <div className="mb-4">
-                                    <select className="sm-input sm:max-w-xs" value={classFilter} onChange={(e) => setClassFilter(e.target.value)}>
+                              <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+                                    <input
+                                          type="search"
+                                          className="sm-input sm:max-w-sm"
+                                          placeholder="Search by student or class…"
+                                          value={search}
+                                          onChange={(e) => onSearchChange(e.target.value)}
+                                    />
+                                    <select
+                                          className="sm-input sm:max-w-xs"
+                                          value={classFilter}
+                                          onChange={(e) => onClassFilterChange(e.target.value)}
+                                    >
                                           <option value="">All classes</option>
                                           {classes.map((klass) => (
                                                 <option key={klass.id} value={klass.id}>
@@ -149,48 +184,59 @@ export default function EnrollmentsPage() {
                               {(error || actionError) && <ErrorBlock message={error ?? actionError!} />}
 
                               {!loading && (
-                                    <div className="sm-card overflow-x-auto">
-                                          <table className="sm-table">
-                                                <thead>
-                                                      <tr>
-                                                            <th>Student</th>
-                                                            <th>Class</th>
-                                                            <th>Enrolled</th>
-                                                            <th></th>
-                                                      </tr>
-                                                </thead>
-                                                <tbody>
-                                                      {enrollments.map((enrollment) => (
-                                                            <tr key={enrollment.id}>
-                                                                  <td className="font-medium text-(--color-primary-dark)">
-                                                                        {enrollment.studentName}
-                                                                  </td>
-                                                                  <td>{enrollment.className}</td>
-                                                                  <td>{formatDate(enrollment.enrolledAt)}</td>
-                                                                  <td>
-                                                                        <div className="flex justify-end">
-                                                                              <button
-                                                                                    type="button"
-                                                                                    className="sm-btn sm-btn-danger"
-                                                                                    disabled={busyId === enrollment.id}
-                                                                                    onClick={() => remove(enrollment.id)}
-                                                                              >
-                                                                                    Remove
-                                                                              </button>
-                                                                        </div>
-                                                                  </td>
-                                                            </tr>
-                                                      ))}
-                                                      {enrollments.length === 0 && (
+                                    <>
+                                          <div className="sm-card overflow-x-auto">
+                                                <table className="sm-table">
+                                                      <thead>
                                                             <tr>
-                                                                  <td colSpan={4} className="text-center text-(--color-ink-soft)">
-                                                                        No enrollments yet.
-                                                                  </td>
+                                                                  <th>Student</th>
+                                                                  <th>Class</th>
+                                                                  <th>Enrolled</th>
+                                                                  <th></th>
                                                             </tr>
-                                                      )}
-                                                </tbody>
-                                          </table>
-                                    </div>
+                                                      </thead>
+                                                      <tbody>
+                                                            {pageItems.map((enrollment) => (
+                                                                  <tr key={enrollment.id}>
+                                                                        <td className="font-medium text-(--color-primary-dark)">
+                                                                              {enrollment.studentName}
+                                                                        </td>
+                                                                        <td>{enrollment.className}</td>
+                                                                        <td>{formatDate(enrollment.enrolledAt)}</td>
+                                                                        <td>
+                                                                              <div className="flex justify-end">
+                                                                                    <button
+                                                                                          type="button"
+                                                                                          className="sm-btn sm-btn-danger"
+                                                                                          disabled={busyId === enrollment.id}
+                                                                                          onClick={() => remove(enrollment.id)}
+                                                                                    >
+                                                                                          Remove
+                                                                                    </button>
+                                                                              </div>
+                                                                        </td>
+                                                                  </tr>
+                                                            ))}
+                                                            {pageItems.length === 0 && (
+                                                                  <tr>
+                                                                        <td colSpan={4} className="text-center text-(--color-ink-soft)">
+                                                                              {enrollments.length === 0
+                                                                                    ? "No enrollments yet."
+                                                                                    : "No enrollments match your search."}
+                                                                        </td>
+                                                                  </tr>
+                                                            )}
+                                                      </tbody>
+                                                </table>
+                                          </div>
+                                          <ListPagination
+                                                page={currentPage}
+                                                totalPages={totalPages}
+                                                total={total}
+                                                pageSize={PAGE_SIZE}
+                                                onPageChange={setPage}
+                                          />
+                                    </>
                               )}
                         </div>
                   </div>
