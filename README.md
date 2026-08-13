@@ -32,48 +32,64 @@ Built around a modern **ASP.NET Core 10 Web API host** and a **Next.js 16 App Ro
 
 ## 🏗️ Architecture & Design
 
-The repository is structured as a clean monorepo separating server-side Web API concerns from client-side UI workflows while sharing environment configurations and Docker orchestration services.
+The repository is a monorepo: one ASP.NET Core 10 Web API, one Next.js 16 App Router SPA, and a shared root `.env` used by Docker Compose, the API (Development), and Next.js.
 
 ```text
 SchoolManagement(.net)/
-├── .github/
-│   └── workflows/
-│       ├── ci.yml                 # Automated unit tests, TypeScript check & frontend linting
-│       └── deploy-backend.yml     # Production Render deployment trigger pipeline
-├── backend/                       # ASP.NET Core 10 Web API Solution
-│   ├── Backend.Tests/             # xUnit test suite (Business rules & RBAC validation)
+├── .github/workflows/
+│   ├── ci.yml                     # dotnet test, tsc --noEmit, Next.js lint
+│   └── deploy-backend.yml         # Render deploy trigger on main/master
+├── backend/
+│   ├── Backend.Tests/             # xUnit + FluentAssertions (EF InMemory)
 │   │   ├── BusinessRulesTests.cs
 │   │   └── Backend.Tests.csproj
-│   ├── src/                       # Single Web API Host executable project
-│   │   ├── Auth/                  # JWT Token Service, BCrypt Hasher & Claims Handler
-│   │   ├── Controllers/           # REST HTTP Controllers (Users, Classes, Subjects, Assignments, Submissions, Health, etc.)
-│   │   ├── Data/                  # DbDbContext, EF Core Configurations, Migrations & DbSeeder
-│   │   ├── Domain/                # Entities, Enums (UserRole, AssignmentStatus, SubmissionStatus), and Exceptions
-│   │   ├── DTOs/                  # Request/Response Data Transfer Contracts
-│   │   ├── Middleware/            # Exception Handling & Correlation Log Middlewares
-│   │   ├── Services/              # Core Business Domain Logic & Use-Case Services
-│   │   ├── Validators/            # FluentValidation Input Rules
-│   │   ├── Program.cs             # Application Entry Point & DI Container Setup
+│   ├── src/                       # ASP.NET Core 10 Web API host
+│   │   ├── Auth/                  # JWT, BCrypt hasher, CurrentUser claims
+│   │   ├── Controllers/           # Auth, Users, Classes, Subjects, TeacherAssignments,
+│   │   │                          # Enrollments, Assignments, Submissions, Settings,
+│   │   │                          # Dashboard, Notifications, Health
+│   │   ├── Data/
+│   │   │   ├── Configurations/    # EF Core entity configurations
+│   │   │   ├── Migrations/        # EF Core migrations
+│   │   │   ├── AppDbContext.cs
+│   │   │   └── DbSeeder.cs        # Demo users, class, subjects, assignments
+│   │   ├── Domain/
+│   │   │   ├── Entities/
+│   │   │   ├── Enums/             # UserRole, AssignmentStatus, SubmissionStatus
+│   │   │   └── Exceptions/
+│   │   ├── DTOs/                  # Request/response contracts
+│   │   ├── Middleware/            # Exception handling
+│   │   ├── Properties/
+│   │   │   └── launchSettings.json  # http://localhost:5000
+│   │   ├── Services/              # Business / use-case services
+│   │   ├── Validators/            # FluentValidation rules
+│   │   ├── Program.cs             # DI, JWT, CORS; migrate + seed on startup
+│   │   ├── appsettings.json
 │   │   └── backend.csproj
-│   ├── Dockerfile                 # Multi-stage production container build manifest
-│   └── SchoolManagement.slnx      # .NET Solution file
-├── frontend/                      # Next.js 16 App Router Single Page Application
-│   ├── app/                       # Dashboard layouts, role-guarded pages & routes (admin, teacher, student)
-│   ├── components/                # Reusable UI component library (AppShell, RoleGuard, Badge, QueryProvider)
-│   ├── lib/                       # API HTTP client, TanStack Query keys, auth context & formatters
-│   ├── package.json               # Node.js dependencies & execution scripts
-│   └── tsconfig.json              # Strict TypeScript configuration
-├── docs/                          # API Postman collections, DB SQL backups & specs
-│   ├── db/
-│   │   └── seed-backup.sql        # Pre-seeded database state SQL dump
+│   ├── Dockerfile                 # Multi-stage .NET 10 Alpine image
+│   └── SchoolManagement.slnx
+├── frontend/                      # Next.js 16 App Router SPA
+│   ├── app/
+│   │   ├── login/
+│   │   ├── notifications/
+│   │   ├── admin/                 # users, classes, subjects, enrollments,
+│   │   │                          # teacher-assignments, settings, assignments
+│   │   ├── teacher/               # dashboard + assignments
+│   │   └── student/               # dashboard + assignments
+│   ├── components/                # AppShell, RoleGuard, QueryProvider, etc.
+│   ├── lib/                       # API client, auth context, query keys
+│   ├── next.config.ts             # Loads repo-root .env for NEXT_PUBLIC_*
+│   └── package.json
+├── docs/
+│   ├── db/seed-backup.sql
 │   ├── School Management API.postman_collection.json
-│   └── SchoolSchema.png           # Database ER diagram
-├── docker-compose.yml             # Infrastructure orchestration (PostgreSQL 18 & pgAdmin 4)
-├── render.yaml                    # Cloud deployment blueprint spec for Render
-├── .csharpierrc.json              # Backend CSharpier code formatting configuration
-├── .prettierrc                    # Frontend Prettier formatting configuration
-├── .env.example                   # Shared environment configuration template
-└── README.md                      # System documentation
+│   └── SchoolSchema.png
+├── docker-compose.yml             # PostgreSQL 18.2 + optional pgAdmin 9
+├── render.yaml
+├── .csharpierrc.json
+├── .prettierrc
+├── .env.example                   # Shared env for Docker, API, and Next.js
+└── README.md
 ```
 
 ### Key Architectural Highlights
@@ -132,70 +148,81 @@ The system enforces granular authorization rules to restrict operations by user 
 
 ## 🚀 Quick Start
 
-Follow these steps to run the complete solution locally.
+Follow these steps to run the API, database, and UI locally. One root `.env` file is shared by Docker Compose, the ASP.NET API (Development), and Next.js.
 
 ### Prerequisites
 
-Ensure you have installed:
-
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`dotnet --version`)
-- [Node.js (v20 or v22 LTS)](https://nodejs.org/) & `npm` (`node --version`)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) or Docker Engine with Docker Compose
+- [Node.js 22 LTS](https://nodejs.org/) (20+ is fine) and `npm`
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) or Docker Engine with Compose v2
 
 ---
 
-### Step 1: Clone Repository & Setup Environment
+### Step 1: Clone and create `.env`
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/EpicVibeCoder/SchoolManagement-.net-.git
 cd SchoolManagement-.net-
 
-# 2. Copy the environment configuration template
 cp .env.example .env
 ```
 
+The API **requires** this file in Development (it walks up from `backend/src` to the repo root). Next.js loads the same file via `frontend/next.config.ts`. Docker Compose reads `POSTGRES_*` and `PGADMIN_*` from it. Defaults in `.env.example` work as-is for local use.
+
 ---
 
-### Step 2: Spin Up Database Infrastructure
+### Step 2: Start PostgreSQL
 
-Start PostgreSQL container in background:
+From the **repository root**:
 
 ```bash
-docker compose up -d postgres
+docker compose up -d --wait postgres
 ```
 
-_(Optional)_ Start `pgAdmin4` for database management:
+`--wait` blocks until the container health check passes (`pg_isready`).
+
+Optional pgAdmin (`dpage/pgadmin4:9`):
 
 ```bash
 docker compose --profile tools up -d pgadmin
 ```
 
-- **pgAdmin URL:** `http://localhost:5050` (Login: `admin@local.com` / `admin`)
+- **pgAdmin:** `http://localhost:5050` — `admin@local.com` / `admin` (from `.env`)
 
 ---
 
-### Step 3: Run Backend Web API
+### Step 3: Start the API
 
-Navigate to the `backend/` directory and execute:
+In a terminal:
+
+```bash
+cd backend/src
+dotnet restore
+dotnet watch run
+```
+
+Equivalent from `backend/`:
 
 ```bash
 cd backend
-dotnet restore
 dotnet watch run --project src/backend.csproj
 ```
 
-- **API Base URL:** `http://localhost:5000`
-- **Swagger Documentation:** `http://localhost:5000/swagger`
-- **Health Check (GET/HEAD):** `http://localhost:5000/api/Health`
+The `http` launch profile binds to **port 5000**. On startup the host applies EF Core migrations and runs `DbSeeder` (demo users are inserted only when `Users` is empty).
 
-_Note: Database migrations and initial seed data apply automatically on backend startup via `DbSeeder`._
+- **API:** `http://localhost:5000`
+- **Swagger (Development only):** `http://localhost:5000/swagger`
+- **Health (GET/HEAD):** `http://localhost:5000/api/health`
+
+```json
+{ "status": "ok", "message": "API is running" }
+```
 
 ---
 
-### Step 4: Run Frontend Application
+### Step 4: Start the frontend
 
-In a new terminal window, navigate to the `frontend/` directory and run:
+In a **second** terminal, from the repository root:
 
 ```bash
 cd frontend
@@ -203,7 +230,10 @@ npm install
 npm run dev
 ```
 
-- **Web Application URL:** `http://localhost:3000`
+- **App:** `http://localhost:3000` (redirects to `/login` or the role home)
+- API base URL: `NEXT_PUBLIC_API_URL` in the root `.env` (`http://localhost:5000`)
+
+Log in with the [demo credentials](#-demo-credentials).
 
 ---
 
@@ -294,17 +324,16 @@ Use the pre-seeded credentials below to explore the application across different
 Supports both `GET` and `HEAD` requests for cloud health probes and load balancer monitoring:
 
 ```http
-GET /api/Health
-HEAD /api/Health
+GET /api/health
+HEAD /api/health
 ```
 
 **Response (200 OK):**
 
 ```json
 {
-      "status": "Healthy",
-      "timestamp": "2026-08-11T22:00:00Z",
-      "database": "Connected"
+      "status": "ok",
+      "message": "API is running"
 }
 ```
 
@@ -312,7 +341,7 @@ HEAD /api/Health
 
 Interactive OpenAPI documentation is dynamically served:
 
-- **Swagger UI:** `http://localhost:5000/swagger`
+- **Swagger UI (Development):** `http://localhost:5000/swagger`
 - **Postman Collection:** [`docs/School Management API.postman_collection.json`](<file:///home/ash/githubRepos/SchoolManagement(.net)/docs/School%20Management%20API.postman_collection.json>)
 
 ---
