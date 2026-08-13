@@ -16,7 +16,7 @@
 
 ---
 
-[Architecture & Design](#-architecture--design) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [Testing & Quality](#-testing--quality) • [Database & Migrations](#-database--migrations) • [Demo Credentials](#-demo-credentials) • [API & Health](#-api--health-monitoring) • [Deployment](#-deployment-guide)
+[Live Demo](#-live-demo) • [Architecture & Design](#-architecture--design) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [Testing & Quality](#-testing--quality) • [Database & Migrations](#-database--migrations) • [Demo Credentials](#-demo-credentials) • [API & Health](#-api--health-monitoring) • [Deployment](#-deployment-guide)
 
 ---
 
@@ -27,6 +27,14 @@
 The **School Management System** is a production-ready, full-stack monorepo web application engineered for educational institutions to manage user roles, academic structures (classes and subjects), teacher assignments, student enrollments, course assignment submissions, and automated/manual grading workflows.
 
 Built around a modern **ASP.NET Core 10 Web API host** and a **Next.js 16 App Router SPA** with **TanStack React Query**, the platform features strict server-side **Role-Based Access Control (RBAC)** across three primary user personas: **Admin**, **Teacher**, and **Student**.
+
+---
+
+## 🌐 Live Demo
+
+**App:** [https://school-management-net-chi.vercel.app](https://school-management-net-chi.vercel.app)
+
+Use the [demo credentials](#-demo-credentials) to sign in.
 
 ---
 
