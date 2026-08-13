@@ -40,7 +40,7 @@ public class TeacherAssignmentsController : ControllerBase
 
     [HttpGet("mine")]
     [Authorize(Roles = "Teacher")]
-    public async Task<ActionResult<List<TeacherAssignmentDto>>> Mine(CancellationToken ct)
+    public async Task<ActionResult<List<TeacherClassSubjectDto>>> Mine(CancellationToken ct)
     {
         var result = await _teacherAssignmentService.ListMineAsync(ct);
         return Ok(result);

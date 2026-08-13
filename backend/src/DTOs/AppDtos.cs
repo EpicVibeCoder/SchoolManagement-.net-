@@ -18,6 +18,8 @@ public record UpdateSubjectRequest(string Name, string Code);
 
 public record TeacherAssignmentDto(Guid Id, Guid TeacherId, string TeacherName, Guid ClassId, string ClassName, Guid SubjectId, string SubjectName);
 public record CreateTeacherAssignmentRequest(Guid TeacherId, Guid ClassId, Guid SubjectId);
+public record TeacherClassSubjectDto(Guid ClassId, string ClassName, Guid SubjectId, string SubjectName);
+
 
 public record EnrollmentDto(Guid Id, Guid StudentId, string StudentName, Guid ClassId, string ClassName, DateTimeOffset EnrolledAt);
 public record CreateEnrollmentRequest(Guid StudentId, Guid ClassId);

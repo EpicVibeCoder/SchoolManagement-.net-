@@ -11,7 +11,7 @@ namespace backend.Services;
 public interface ITeacherAssignmentService
 {
     Task<List<TeacherAssignmentDto>> ListAsync(Guid? teacherId, Guid? classId, CancellationToken ct);
-    Task<List<TeacherAssignmentDto>> ListMineAsync(CancellationToken ct); 
+    Task<List<TeacherClassSubjectDto>> ListMineAsync(CancellationToken ct); 
     Task<TeacherAssignmentDto> CreateAsync(CreateTeacherAssignmentRequest request, CancellationToken ct);
     Task DeleteAsync(Guid id, CancellationToken ct);
 }
@@ -39,19 +39,21 @@ public class TeacherAssignmentService : ITeacherAssignmentService
         return await query.OrderBy(t => t.Teacher.FullName).Select(t => new TeacherAssignmentDto(t.Id, t.TeacherId, t.Teacher.FullName, t.ClassId, t.Class.Name, t.SubjectId, t.Subject.Name)).ToListAsync(ct);
     }
 
-    public async Task<List<TeacherAssignmentDto>> ListMineAsync(CancellationToken ct)
-    {
-        var teacherId = _currentUser.UserId;
-        return await _db
-            .TeacherAssignments.Where(t => t.TeacherId == teacherId)
-            .Include(t => t.Teacher)
-            .Include(t => t.Class)
-            .Include(t => t.Subject)
-            .OrderBy(t => t.Class.Name)
-            .ThenBy(t => t.Subject.Name)
-            .Select(t => new TeacherAssignmentDto(t.Id, t.TeacherId, t.Teacher.FullName, t.ClassId, t.Class.Name, t.SubjectId, t.Subject.Name))
-            .ToListAsync(ct);
-    }
+    public async Task<List<TeacherClassSubjectDto>> ListMineAsync(CancellationToken ct)
+{
+    var teacherId = _currentUser.UserId;
+    return await _db.TeacherAssignments
+        .Where(t => t.TeacherId == teacherId)
+        .Select(t => new TeacherClassSubjectDto(
+            t.ClassId,
+            t.Class.Name,
+            t.SubjectId,
+            t.Subject.Name))
+        .Distinct()
+        .OrderBy(t => t.ClassName)
+        .ThenBy(t => t.SubjectName)
+        .ToListAsync(ct);
+}
 
     public async Task<TeacherAssignmentDto> CreateAsync(CreateTeacherAssignmentRequest request, CancellationToken ct)
     {
