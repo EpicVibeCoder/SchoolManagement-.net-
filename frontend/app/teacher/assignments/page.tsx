@@ -97,10 +97,11 @@ export default function TeacherAssignmentsPage() {
             teachingAssignments.forEach((t) => map.set(t.classId, t.className));
             return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
       }, [teachingAssignments]);
-      const subjectsForClass = useMemo(
-            () => teachingAssignments.filter((t) => !selectedClassId || t.classId === selectedClassId),
-            [teachingAssignments, selectedClassId],
-      );
+      const subjectsForClass = useMemo(() => {
+            const map = new Map<string, string>();
+            teachingAssignments.filter((t) => t.classId === selectedClassId).forEach((t) => map.set(t.subjectId, t.subjectName));
+            return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+      }, [teachingAssignments, selectedClassId]);
 
       const filtered = useMemo(() => {
             const q = search.trim().toLowerCase();
@@ -219,9 +220,9 @@ export default function TeacherAssignmentsPage() {
                                           </label>
                                           <select id="subjectId" className="sm-input" {...register("subjectId")}>
                                                 <option value="">Select a subject</option>
-                                                {subjectsForClass.map((t) => (
-                                                      <option key={t.subjectId} value={t.subjectId}>
-                                                            {t.subjectName}
+                                                {subjectsForClass.map((s) => (
+                                                      <option key={s.id} value={s.id}>
+                                                            {s.name}
                                                       </option>
                                                 ))}
                                           </select>
