@@ -9,7 +9,7 @@ import { AssignmentStatusBadge } from "@/components/Badge";
 import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
-import { ApiError, AssignmentDto, AssignmentStatus, TeacherAssignmentDto, del, get, post } from "@/lib/api";
+import { ApiError, AssignmentDto, AssignmentStatus, TeacherClassSubjectDto, del, get, post } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { dateInputToEndOfDayIso, formatDate } from "@/lib/format";
 import { PAGE_SIZE, paginate } from "@/lib/paginate";
@@ -47,7 +47,7 @@ export default function TeacherAssignmentsPage() {
       });
       const teachingQuery = useQuery({
             queryKey: queryKeys.teacherAssignments(user?.id),
-            queryFn: () => get<TeacherAssignmentDto[]>("/api/teacher-assignments/mine"),
+            queryFn: () => get<TeacherClassSubjectDto[]>("/api/teacher-assignments/mine"),
             enabled: !!user?.id,
       });
 

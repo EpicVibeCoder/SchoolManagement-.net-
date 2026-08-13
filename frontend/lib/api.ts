@@ -111,6 +111,13 @@ export interface CreateTeacherAssignmentRequest {
       subjectId: string;
 }
 
+export interface TeacherClassSubjectDto {
+      classId: string;
+      className: string;
+      subjectId: string;
+      subjectName: string;
+}
+
 export interface EnrollmentDto {
       id: string;
       studentId: string;
