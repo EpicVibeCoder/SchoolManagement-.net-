@@ -7,7 +7,7 @@ import { AssignmentStatusBadge, SubmissionStatusBadge } from "@/components/Badge
 import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
-import { ApiError, AssignmentDto, SubmissionDto, get, put } from "@/lib/api";
+import { ApiError, AssignmentDto, SubmissionDto, SubmissionStatus, get, put } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import { PAGE_SIZE, paginate } from "@/lib/paginate";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,6 +23,7 @@ export default function TeacherAssignmentDetailPage() {
       const router = useRouter();
 
       const [drafts, setDrafts] = useState<Record<string, GradeDraft>>({});
+      const [editingIds, setEditingIds] = useState<Set<string>>(new Set());
       const [savingId, setSavingId] = useState<string | null>(null);
       const [rowError, setRowError] = useState<Record<string, string>>({});
       const [search, setSearch] = useState("");
@@ -83,6 +84,16 @@ export default function TeacherAssignmentDetailPage() {
             });
       }, [submissionsQuery.data]);
 
+      const isGraded = (s: SubmissionDto) =>
+            s.status === SubmissionStatus.Graded || s.status === SubmissionStatus.Returned;
+
+      const isLocked = (s: SubmissionDto) => isGraded(s) && !editingIds.has(s.id);
+
+      const startEdit = (id: string) => {
+            setEditingIds((prev) => new Set(prev).add(id));
+            setRowError((prev) => ({ ...prev, [id]: "" }));
+      };
+
       const updateDraft = (id: string, field: keyof GradeDraft, value: string) => {
             setDrafts((prev) => ({
                   ...prev,
@@ -113,6 +124,11 @@ export default function TeacherAssignmentDetailPage() {
                   await queryClient.invalidateQueries({ queryKey: queryKeys.assignment(assignmentId) });
                   await queryClient.invalidateQueries({ queryKey: queryKeys.assignments });
                   await queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+                  setEditingIds((prev) => {
+                        const next = new Set(prev);
+                        next.delete(submission.id);
+                        return next;
+                  });
             } catch (err) {
                   setRowError((prev) => ({
                         ...prev,
@@ -190,8 +206,10 @@ export default function TeacherAssignmentDetailPage() {
                                                       type="number"
                                                       min={0}
                                                       max={s.maxMarks}
-                                                      className="sm-input"
+                                                      className="sm-input disabled:cursor-not-allowed disabled:opacity-60"
                                                       value={drafts[s.id]?.marks ?? ""}
+                                                      disabled={isLocked(s)}
+                                                      readOnly={isLocked(s)}
                                                       onChange={(e) => updateDraft(s.id, "marks", e.target.value)}
                                                 />
                                           </div>
@@ -201,19 +219,27 @@ export default function TeacherAssignmentDetailPage() {
                                                 </label>
                                                 <input
                                                       id={`feedback-${s.id}`}
-                                                      className="sm-input"
+                                                      className="sm-input disabled:cursor-not-allowed disabled:opacity-60"
                                                       value={drafts[s.id]?.feedback ?? ""}
+                                                      disabled={isLocked(s)}
+                                                      readOnly={isLocked(s)}
                                                       onChange={(e) => updateDraft(s.id, "feedback", e.target.value)}
                                                 />
                                           </div>
-                                          <button
-                                                type="button"
-                                                className="sm-btn sm-btn-primary"
-                                                disabled={savingId === s.id}
-                                                onClick={() => submitGrade(s)}
-                                          >
-                                                {savingId === s.id ? "Saving…" : "Save grade"}
-                                          </button>
+                                          {isLocked(s) ? (
+                                                <button type="button" className="sm-btn sm-btn-secondary" onClick={() => startEdit(s.id)}>
+                                                      Edit
+                                                </button>
+                                          ) : (
+                                                <button
+                                                      type="button"
+                                                      className="sm-btn sm-btn-primary"
+                                                      disabled={savingId === s.id}
+                                                      onClick={() => submitGrade(s)}
+                                                >
+                                                      {savingId === s.id ? "Saving…" : "Save grade"}
+                                                </button>
+                                          )}
                                     </div>
                                     {rowError[s.id] && <p className="mt-2 text-xs text-(--color-danger)">{rowError[s.id]}</p>}
                               </div>
