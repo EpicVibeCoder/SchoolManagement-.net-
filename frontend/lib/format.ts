@@ -18,3 +18,12 @@ export function formatDateTime(value: string | Date): string {
 export function dateInputToEndOfDayIso(dateInput: string): string {
       return new Date(`${dateInput}T23:59:59`).toISOString();
 }
+
+/** Convert an ISO timestamp to a YYYY-MM-DD value for `<input type="date">`. */
+export function isoToDateInput(value: string): string {
+      const date = new Date(value);
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+}

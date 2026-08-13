@@ -9,9 +9,9 @@ import { AssignmentStatusBadge } from "@/components/Badge";
 import ListPagination from "@/components/ListPagination";
 import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
-import { ApiError, AssignmentDto, AssignmentStatus, TeacherClassSubjectDto, del, get, post } from "@/lib/api";
+import { ApiError, AssignmentDto, AssignmentStatus, TeacherClassSubjectDto, del, get, post, put } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { dateInputToEndOfDayIso, formatDate } from "@/lib/format";
+import { dateInputToEndOfDayIso, formatDate, isoToDateInput } from "@/lib/format";
 import { PAGE_SIZE, paginate } from "@/lib/paginate";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
@@ -79,6 +79,7 @@ export default function TeacherAssignmentsPage() {
       const [submitting, setSubmitting] = useState(false);
       const [busyId, setBusyId] = useState<string | null>(null);
       const [showForm, setShowForm] = useState(false);
+      const [editingId, setEditingId] = useState<string | null>(null);
       const [search, setSearch] = useState("");
       const [page, setPage] = useState(1);
       const {
@@ -92,16 +93,24 @@ export default function TeacherAssignmentsPage() {
             defaultValues: emptyForm,
       });
       const selectedClassId = useWatch({ control, name: "classId" });
+      const editingAssignment = useMemo(
+            () => (editingId ? (assignments.find((a) => a.id === editingId) ?? null) : null),
+            [assignments, editingId],
+      );
       const classes = useMemo(() => {
             const map = new Map<string, string>();
             teachingAssignments.forEach((t) => map.set(t.classId, t.className));
+            if (editingAssignment) map.set(editingAssignment.classId, editingAssignment.className);
             return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-      }, [teachingAssignments]);
+      }, [teachingAssignments, editingAssignment]);
       const subjectsForClass = useMemo(() => {
             const map = new Map<string, string>();
             teachingAssignments.filter((t) => t.classId === selectedClassId).forEach((t) => map.set(t.subjectId, t.subjectName));
+            if (editingAssignment && editingAssignment.classId === selectedClassId) {
+                  map.set(editingAssignment.subjectId, editingAssignment.subjectName);
+            }
             return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-      }, [teachingAssignments, selectedClassId]);
+      }, [teachingAssignments, selectedClassId, editingAssignment]);
 
       const filtered = useMemo(() => {
             const q = search.trim().toLowerCase();
@@ -122,23 +131,48 @@ export default function TeacherAssignmentsPage() {
             setPage(1);
       };
 
-      const refresh = async () => {
+      const refresh = async (assignmentId?: string) => {
             await queryClient.invalidateQueries({ queryKey: queryKeys.assignments });
+            if (assignmentId) await queryClient.invalidateQueries({ queryKey: queryKeys.assignment(assignmentId) });
             await queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
       };
-      const onCreate = async (values: AssignmentFormValues) => {
+
+      const closeForm = () => {
+            setShowForm(false);
+            setEditingId(null);
+            setFormError(null);
+            reset(emptyForm);
+      };
+
+      const startEdit = (a: AssignmentDto) => {
+            setEditingId(a.id);
+            setFormError(null);
+            reset({
+                  title: a.title,
+                  description: a.description,
+                  deadline: isoToDateInput(a.deadline),
+                  maxMarks: a.maxMarks,
+                  classId: a.classId,
+                  subjectId: a.subjectId,
+            });
+            setShowForm(true);
+      };
+
+      const onSave = async (values: AssignmentFormValues) => {
             setFormError(null);
             setSubmitting(true);
+            const payload = { ...values, deadline: dateInputToEndOfDayIso(values.deadline) };
             try {
-                  await post("/api/assignments", {
-                        ...values,
-                        deadline: dateInputToEndOfDayIso(values.deadline),
-                  });
-                  reset(emptyForm);
-                  setShowForm(false);
-                  await refresh();
+                  if (editingId) {
+                        await put(`/api/assignments/${editingId}`, payload);
+                  } else {
+                        await post("/api/assignments", payload);
+                  }
+                  const savedId = editingId;
+                  closeForm();
+                  await refresh(savedId ?? undefined);
             } catch (err) {
-                  setFormError(err instanceof ApiError ? err.message : "Failed to create assignment.");
+                  setFormError(err instanceof ApiError ? err.message : editingId ? "Failed to update assignment." : "Failed to create assignment.");
             } finally {
                   setSubmitting(false);
             }
@@ -175,7 +209,7 @@ export default function TeacherAssignmentsPage() {
                         title="Assignments"
                         description="Create, publish, and manage your assignments."
                         actions={
-                              <button type="button" className="sm-btn sm-btn-primary" onClick={() => setShowForm((v) => !v)}>
+                              <button type="button" className="sm-btn sm-btn-primary" onClick={() => (showForm ? closeForm() : setShowForm(true))}>
                                     {showForm ? "Close" : "New assignment"}
                               </button>
                         }
@@ -183,8 +217,8 @@ export default function TeacherAssignmentsPage() {
 
                   {showForm && (
                         <div className="sm-card mb-6 p-5">
-                              <h2 className="text-lg font-semibold">New assignment</h2>
-                              <form onSubmit={handleSubmit(onCreate)} className="mt-4 grid gap-3 sm:grid-cols-2" noValidate>
+                              <h2 className="text-lg font-semibold">{editingId ? "Edit assignment" : "New assignment"}</h2>
+                              <form onSubmit={handleSubmit(onSave)} className="mt-4 grid gap-3 sm:grid-cols-2" noValidate>
                                     {formError && <div className="sm-alert sm-alert-danger sm:col-span-2">{formError}</div>}
                                     <div className="sm:col-span-2">
                                           <label className="sm-label" htmlFor="title">
@@ -242,10 +276,15 @@ export default function TeacherAssignmentsPage() {
                                           <input id="maxMarks" type="number" className="sm-input" {...register("maxMarks")} />
                                           {errors.maxMarks && <p className="mt-1 text-xs text-(--color-danger)">{errors.maxMarks.message}</p>}
                                     </div>
-                                    <div className="sm:col-span-2">
+                                    <div className="sm:col-span-2 flex gap-2">
                                           <button type="submit" className="sm-btn sm-btn-primary" disabled={submitting}>
-                                                {submitting ? "Creating…" : "Create assignment"}
+                                                {submitting ? "Saving…" : editingId ? "Save changes" : "Create assignment"}
                                           </button>
+                                          {editingId && (
+                                                <button type="button" className="sm-btn sm-btn-secondary" onClick={closeForm}>
+                                                      Cancel
+                                                </button>
+                                          )}
                                     </div>
                               </form>
                         </div>
@@ -298,6 +337,14 @@ export default function TeacherAssignmentsPage() {
                                                             </td>
                                                             <td>
                                                                   <div className="flex justify-end gap-2">
+                                                                        <button
+                                                                              type="button"
+                                                                              className="sm-btn sm-btn-secondary"
+                                                                              disabled={busyId === a.id}
+                                                                              onClick={() => startEdit(a)}
+                                                                        >
+                                                                              Edit
+                                                                        </button>
                                                                         <button
                                                                               type="button"
                                                                               className="sm-btn sm-btn-secondary"
