@@ -1,9 +1,10 @@
 {
   "info": {
-    "_postman_id": "6235512d-d824-4add-a78d-1cac64fb7a31",
+    "_postman_id": "2ff30e8b-9dc6-4e36-b40a-53838a4df081",
     "name": "School Management API",
-    "description": "Postman collection for the School Management ASP.NET Core API.\n\nCovers Health, Auth, Users, Classes, Subjects, Teacher Assignments, Enrollments, Assignments, Submissions, Dashboard, Notifications, and Settings.\n\nEach request includes Postman tests (status + response shape / side-effects).\n\n**Setup**\n1. Start the API (`dotnet run` in `backend`) \u2014 default base URL is `http://localhost:5000`.\n2. Run Login requests first so tokens are saved to collection variables.\n3. Seeded IDs are prefilled as collection variables (see DbSeeder).\n\n**Seeded credentials**\n- Admin: `admin@school.com` / `Admin123!`\n- Teacher: `teacher@school.com` / `Teacher123!`\n- Student: `student1@school.com` / `Student123!`\n- Student2: `student2@school.com` / `Student123!`",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "description": "Postman collection for the School Management ASP.NET Core API.\n\nCovers Health, Auth, Users, Classes, Subjects, Teacher Assignments, Enrollments, Assignments, Submissions, Dashboard, Notifications, Settings, and Access Control (401/403/404 RBAC).\n\nEach request includes Postman tests (status + response shape / side-effects).\n\n**Setup**\n1. Start the API (`dotnet run` in `backend`) — default base URL is `http://localhost:5000`.\n2. Run Login requests first so tokens are saved to collection variables.\n3. Run Access Control after logins. Seeded IDs are prefilled as collection variables (see DbSeeder).\n\n**Seeded credentials**\n- Admin: `admin@school.com` / `Admin123!`\n- Teacher: `teacher@school.com` / `Teacher123!`\n- Student: `student1@school.com` / `Student123!`\n- Student2: `student2@school.com` / `Student123!`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "2903335"
   },
   "item": [
     {
@@ -11,6 +12,21 @@
       "item": [
         {
           "name": "GET Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
+                  "const data = pm.response.json();",
+                  "pm.test('status is ok', () => pm.expect(data.status).to.eql('ok'));",
+                  "pm.test('has message', () => pm.expect(data).to.have.property('message'));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -26,25 +42,21 @@
             },
             "description": "Anonymous health check."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "HEAD Health",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
-                  "const data = pm.response.json();",
-                  "pm.test('status is ok', () => pm.expect(data.status).to.eql('ok'));",
-                  "pm.test('has message', () => pm.expect(data).to.have.property('message'));"
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "HEAD Health",
+          ],
           "request": {
             "method": "HEAD",
             "header": [],
@@ -60,18 +72,7 @@
             },
             "description": "Anonymous HEAD health check."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ]
+          "response": []
         }
       ]
     },
@@ -80,37 +81,6 @@
       "item": [
         {
           "name": "Login - Admin",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "login"
-              ]
-            },
-            "description": "Authenticate as Admin and save JWT.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@school.com\",\n  \"password\": \"Admin123!\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": [],
           "event": [
             {
               "listen": "test",
@@ -133,10 +103,7 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Login - Teacher",
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -145,6 +112,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@school.com\",\n  \"password\": \"Admin123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
               "host": [
@@ -156,18 +132,12 @@
                 "login"
               ]
             },
-            "description": "Authenticate as Teacher and save JWT.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"teacher@school.com\",\n  \"password\": \"Teacher123!\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Authenticate as Admin and save JWT."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Login - Teacher",
           "event": [
             {
               "listen": "test",
@@ -190,10 +160,7 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Login - Student",
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -202,6 +169,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"teacher@school.com\",\n  \"password\": \"Teacher123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
               "host": [
@@ -213,18 +189,12 @@
                 "login"
               ]
             },
-            "description": "Authenticate as Student (seeded student1) and save JWT.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"student1@school.com\",\n  \"password\": \"Student123!\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Authenticate as Teacher and save JWT."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Login - Student",
           "event": [
             {
               "listen": "test",
@@ -247,10 +217,7 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Login - Student 2",
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -259,6 +226,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student1@school.com\",\n  \"password\": \"Student123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
               "host": [
@@ -270,18 +246,12 @@
                 "login"
               ]
             },
-            "description": "Authenticate as Student2 \u2014 useful for Create Submission when student1 already submitted.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"student2@school.com\",\n  \"password\": \"Student123!\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Authenticate as Student (seeded student1) and save JWT."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Login - Student 2",
           "event": [
             {
               "listen": "test",
@@ -304,37 +274,41 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "GET Me",
+          ],
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student2@school.com\",\n  \"password\": \"Student123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": "{{baseUrl}}/api/auth/me",
+              "raw": "{{baseUrl}}/api/auth/login",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "auth",
-                "me"
+                "login"
               ]
             },
-            "description": "Current authenticated user profile.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{bearerToken}}",
-                  "type": "string"
-                }
-              ]
-            }
+            "description": "Authenticate as Student2 — useful for Create Submission when student1 already submitted."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "GET Me",
           "event": [
             {
               "listen": "test",
@@ -353,7 +327,110 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Current authenticated user profile."
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Invalid credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401 (unauthorized)', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@school.com\",\n  \"password\": \"WrongPassword!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Wrong password should not issue a token."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Me - No token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Protected route without JWT."
+          },
+          "response": []
         }
       ]
     },
@@ -362,7 +439,37 @@
       "item": [
         {
           "name": "List Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
+                  "const data = pm.response.json();",
+                  "pm.test('paged shape', () => {",
+                  "  pm.expect(data).to.have.property('items');",
+                  "  pm.expect(data).to.have.property('total');",
+                  "  pm.expect(data).to.have.property('page');",
+                  "  pm.expect(data).to.have.property('pageSize');",
+                  "  pm.expect(data.items).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -395,69 +502,12 @@
                 }
               ]
             },
-            "description": "Paged user list. Optional filters: search, role.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
+            "description": "Paged user list. Optional filters: search, role."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
-                  "const data = pm.response.json();",
-                  "pm.test('paged shape', () => {",
-                  "  pm.expect(data).to.have.property('items');",
-                  "  pm.expect(data).to.have.property('total');",
-                  "  pm.expect(data).to.have.property('page');",
-                  "  pm.expect(data).to.have.property('pageSize');",
-                  "  pm.expect(data.items).to.be.an('array');",
-                  "});"
-                ]
-              }
-            }
-          ]
+          "response": []
         },
         {
           "name": "Get User by ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/{{teacherId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "{{teacherId}}"
-              ]
-            },
-            "description": "Get a single user by GUID.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": [],
           "event": [
             {
               "listen": "test",
@@ -474,29 +524,8 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Create User",
+          ],
           "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users"
-              ]
-            },
-            "description": "Create Admin, Teacher, or Student. Saves createdUserId. Re-run may fail if email already exists.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -507,17 +536,25 @@
                 }
               ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"newteacher@school.com\",\n  \"password\": \"User123!\",\n  \"fullName\": \"Jane Doe\",\n  \"role\": \"Teacher\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{teacherId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{teacherId}}"
+              ]
+            },
+            "description": "Get a single user by GUID."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Create User",
           "event": [
             {
               "listen": "test",
@@ -536,30 +573,8 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Update User",
+          ],
           "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/{{createdUserId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "{{createdUserId}}"
-              ]
-            },
-            "description": "Update user. Set password to a string to reset, or null to keep current.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -570,17 +585,38 @@
                 }
               ]
             },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Jane Doe Updated\",\n  \"role\": \"Teacher\",\n  \"isActive\": true,\n  \"password\": null\n}",
+              "raw": "{\n  \"email\": \"newteacher@school.com\",\n  \"password\": \"User123!\",\n  \"fullName\": \"Jane Doe\",\n  \"role\": \"Teacher\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "description": "Create Admin, Teacher, or Student. Saves createdUserId. Re-run may fail if email already exists."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Update User",
           "event": [
             {
               "listen": "test",
@@ -594,11 +630,73 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Jane Doe Updated\",\n  \"role\": \"Teacher\",\n  \"isActive\": true,\n  \"password\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{createdUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{createdUserId}}"
+              ]
+            },
+            "description": "Update user. Set password to a string to reset, or null to keep current."
+          },
+          "response": []
         },
         {
           "name": "Deactivate User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "DELETE",
             "header": [],
             "url": {
@@ -612,30 +710,9 @@
                 "{{createdUserId}}"
               ]
             },
-            "description": "Soft-deactivate a user (NoContent).",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
+            "description": "Soft-deactivate a user (NoContent)."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
-                ]
-              }
-            }
-          ]
+          "response": []
         }
       ]
     },
@@ -644,31 +721,6 @@
       "item": [
         {
           "name": "List Classes",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/classes",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "classes"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": [],
           "event": [
             {
               "listen": "test",
@@ -686,24 +738,8 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Get Class by ID",
+          ],
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/classes/{{classId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "classes",
-                "{{classId}}"
-              ]
-            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -713,9 +749,24 @@
                   "type": "string"
                 }
               ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/classes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "classes"
+              ]
             }
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Get Class by ID",
           "event": [
             {
               "listen": "test",
@@ -732,29 +783,8 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Create Class",
+          ],
           "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/classes",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "classes"
-              ]
-            },
-            "description": "Creates a class. Body uses name, code, academicYear.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -765,17 +795,24 @@
                 }
               ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Grade 11 B\",\n  \"code\": \"G11B\",\n  \"academicYear\": \"2025-2026\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/classes/{{classId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "classes",
+                "{{classId}}"
+              ]
             }
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Create Class",
           "event": [
             {
               "listen": "test",
@@ -793,29 +830,8 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Update Class",
+          ],
           "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/classes/{{createdClassId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "classes",
-                "{{createdClassId}}"
-              ]
-            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -826,17 +842,38 @@
                 }
               ]
             },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Grade 11 B Updated\",\n  \"code\": \"G11B\",\n  \"academicYear\": \"2025-2026\"\n}",
+              "raw": "{\n  \"name\": \"Grade 11 B\",\n  \"code\": \"G11B\",\n  \"academicYear\": \"2025-2026\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/classes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "classes"
+              ]
+            },
+            "description": "Creates a class. Body uses name, code, academicYear."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Update Class",
           "event": [
             {
               "listen": "test",
@@ -850,11 +887,72 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grade 11 B Updated\",\n  \"code\": \"G11B\",\n  \"academicYear\": \"2025-2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/classes/{{createdClassId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "classes",
+                "{{createdClassId}}"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Delete Class",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "DELETE",
             "header": [],
             "url": {
@@ -868,30 +966,9 @@
                 "{{createdClassId}}"
               ]
             },
-            "description": "Delete a class created in this collection (avoid deleting seeded classId while testing other flows).",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
+            "description": "Delete a class created in this collection (avoid deleting seeded classId while testing other flows)."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
-                ]
-              }
-            }
-          ]
+          "response": []
         }
       ]
     },
@@ -900,32 +977,6 @@
       "item": [
         {
           "name": "List Subjects",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/subjects",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "subjects"
-              ]
-            },
-            "description": "List all subjects (subjects are not tied to a class).",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": [],
           "event": [
             {
               "listen": "test",
@@ -942,24 +993,8 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Get Subject by ID",
+          ],
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/subjects/{{subjectId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "subjects",
-                "{{subjectId}}"
-              ]
-            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -969,9 +1004,25 @@
                   "type": "string"
                 }
               ]
-            }
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/subjects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subjects"
+              ]
+            },
+            "description": "List all subjects (subjects are not tied to a class)."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Get Subject by ID",
           "event": [
             {
               "listen": "test",
@@ -988,29 +1039,8 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Create Subject",
+          ],
           "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/subjects",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "subjects"
-              ]
-            },
-            "description": "Create subject (name + code only; no classId).",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1021,17 +1051,24 @@
                 }
               ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Physics\",\n  \"code\": \"PHY\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/subjects/{{subjectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subjects",
+                "{{subjectId}}"
+              ]
             }
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Create Subject",
           "event": [
             {
               "listen": "test",
@@ -1049,29 +1086,8 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Update Subject",
+          ],
           "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/subjects/{{createdSubjectId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "subjects",
-                "{{createdSubjectId}}"
-              ]
-            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1082,17 +1098,38 @@
                 }
               ]
             },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Physics Updated\",\n  \"code\": \"PHY\"\n}",
+              "raw": "{\n  \"name\": \"Physics\",\n  \"code\": \"PHY\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/subjects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subjects"
+              ]
+            },
+            "description": "Create subject (name + code only; no classId)."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Update Subject",
           "event": [
             {
               "listen": "test",
@@ -1106,11 +1143,72 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Physics Updated\",\n  \"code\": \"PHY\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/subjects/{{createdSubjectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subjects",
+                "{{createdSubjectId}}"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Delete Subject",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "DELETE",
             "header": [],
             "url": {
@@ -1123,30 +1221,9 @@
                 "subjects",
                 "{{createdSubjectId}}"
               ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
             }
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
-                ]
-              }
-            }
-          ]
+          "response": []
         }
       ]
     },
@@ -1155,33 +1232,6 @@
       "item": [
         {
           "name": "List My Teaching Assignments (Teacher)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/teacher-assignments/mine",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "teacher-assignments",
-                "mine"
-              ]
-            },
-            "description": "Returns class\u2194subject mappings for the authenticated teacher (from JWT). Use for assignment-creation dropdowns.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{teacherToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": [],
           "event": [
             {
               "listen": "test",
@@ -1201,11 +1251,63 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/teacher-assignments/mine",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "teacher-assignments",
+                "mine"
+              ]
+            },
+            "description": "Returns class↔subject mappings for the authenticated teacher (from JWT). Use for assignment-creation dropdowns."
+          },
+          "response": []
         },
         {
           "name": "List Teacher Assignments (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
+                  "const data = pm.response.json();",
+                  "pm.test('returns array', () => pm.expect(data).to.be.an('array'));",
+                  "if (data.length && data[0].id) pm.collectionVariables.set('teacherAssignmentId', data[0].id);"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -1228,77 +1330,12 @@
                 }
               ]
             },
-            "description": "List teacher\u2194class\u2194subject mappings.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
+            "description": "List teacher↔class↔subject mappings."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
-                  "const data = pm.response.json();",
-                  "pm.test('returns array', () => pm.expect(data).to.be.an('array'));",
-                  "if (data.length && data[0].id) pm.collectionVariables.set('teacherAssignmentId', data[0].id);"
-                ]
-              }
-            }
-          ]
+          "response": []
         },
         {
           "name": "Create Teacher Assignment (Admin)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/teacher-assignments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "teacher-assignments"
-              ]
-            },
-            "description": "Assign teacher to English subject (seed already has Math).",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"teacherId\": \"{{teacherId}}\",\n  \"classId\": \"{{classId}}\",\n  \"subjectId\": \"{{subjectEngId}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": [],
           "event": [
             {
               "listen": "test",
@@ -1315,11 +1352,72 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teacherId\": \"{{teacherId}}\",\n  \"classId\": \"{{classId}}\",\n  \"subjectId\": \"{{subjectEngId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/teacher-assignments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "teacher-assignments"
+              ]
+            },
+            "description": "Assign teacher to English subject (seed already has Math)."
+          },
+          "response": []
         },
         {
           "name": "Delete Teacher Assignment (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "DELETE",
             "header": [],
             "url": {
@@ -1333,7 +1431,33 @@
                 "{{teacherAssignmentId}}"
               ]
             },
-            "description": "Requires teacherAssignmentId from Create or List.",
+            "description": "Requires teacherAssignmentId from Create or List."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Enrollments (Admin)",
+      "item": [
+        {
+          "name": "List Enrollments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
+                  "const data = pm.response.json();",
+                  "pm.test('returns array', () => pm.expect(data).to.be.an('array'));",
+                  "if (data.length && data[0].id) pm.collectionVariables.set('enrollmentId', data[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1343,29 +1467,7 @@
                   "type": "string"
                 }
               ]
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Enrollments (Admin)",
-      "item": [
-        {
-          "name": "List Enrollments",
-          "request": {
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -1389,77 +1491,12 @@
                 }
               ]
             },
-            "description": "Copy an enrollment id from the response into enrollmentId before Delete.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
+            "description": "Copy an enrollment id from the response into enrollmentId before Delete."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
-                  "const data = pm.response.json();",
-                  "pm.test('returns array', () => pm.expect(data).to.be.an('array'));",
-                  "if (data.length && data[0].id) pm.collectionVariables.set('enrollmentId', data[0].id);"
-                ]
-              }
-            }
-          ]
+          "response": []
         },
         {
           "name": "Create Enrollment",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/enrollments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "enrollments"
-              ]
-            },
-            "description": "Enroll student2 into a newly created class (run Create Class first). Seeded students are already enrolled in classId.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"studentId\": \"{{student2Id}}\",\n  \"classId\": \"{{createdClassId}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": [],
           "event": [
             {
               "listen": "test",
@@ -1476,11 +1513,72 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{student2Id}}\",\n  \"classId\": \"{{createdClassId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/enrollments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "enrollments"
+              ]
+            },
+            "description": "Enroll student2 into a newly created class (run Create Class first). Seeded students are already enrolled in classId."
+          },
+          "response": []
         },
         {
           "name": "Delete Enrollment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "DELETE",
             "header": [],
             "url": {
@@ -1493,30 +1591,9 @@
                 "enrollments",
                 "{{enrollmentId}}"
               ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
             }
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
-                ]
-              }
-            }
-          ]
+          "response": []
         }
       ]
     },
@@ -1525,7 +1602,31 @@
       "item": [
         {
           "name": "List Assignments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
+                  "const data = pm.response.json();",
+                  "pm.test('returns array', () => pm.expect(data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -1548,62 +1649,12 @@
                 }
               ]
             },
-            "description": "Role-scoped list. Students only see published for enrolled classes.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{bearerToken}}",
-                  "type": "string"
-                }
-              ]
-            }
+            "description": "Role-scoped list. Students only see published for enrolled classes."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
-                  "const data = pm.response.json();",
-                  "pm.test('returns array', () => pm.expect(data).to.be.an('array'));"
-                ]
-              }
-            }
-          ]
+          "response": []
         },
         {
           "name": "Get Assignment by ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/assignments/{{publishedAssignmentId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "assignments",
-                "{{publishedAssignmentId}}"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{bearerToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": [],
           "event": [
             {
               "listen": "test",
@@ -1621,50 +1672,36 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Create Assignment (Teacher)",
+          ],
           "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/assignments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "assignments"
-              ]
-            },
-            "description": "Creates a Draft assignment. Teacher must be assigned to class+subject.",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{teacherToken}}",
+                  "value": "{{bearerToken}}",
                   "type": "string"
                 }
               ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Calculus Practice\",\n  \"description\": \"Complete exercises 1\u201310 from Chapter 4.\",\n  \"deadline\": \"2026-09-30T23:59:59Z\",\n  \"maxMarks\": 100,\n  \"classId\": \"{{classId}}\",\n  \"subjectId\": \"{{subjectId}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/assignments/{{publishedAssignmentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assignments",
+                "{{publishedAssignmentId}}"
+              ]
             }
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Create Assignment (Teacher)",
           "event": [
             {
               "listen": "test",
@@ -1683,30 +1720,8 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Update Assignment (Teacher)",
+          ],
           "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/assignments/{{assignmentId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "assignments",
-                "{{assignmentId}}"
-              ]
-            },
-            "description": "Uses assignmentId from Create, or set to draftAssignmentId.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1717,17 +1732,38 @@
                 }
               ]
             },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Calculus Practice (Updated)\",\n  \"description\": \"Complete exercises 1\u201312 from Chapter 4.\",\n  \"deadline\": \"2026-10-05T23:59:59Z\",\n  \"maxMarks\": 100,\n  \"classId\": \"{{classId}}\",\n  \"subjectId\": \"{{subjectId}}\"\n}",
+              "raw": "{\n  \"title\": \"Calculus Practice\",\n  \"description\": \"Complete exercises 1–10 from Chapter 4.\",\n  \"deadline\": \"2026-09-30T23:59:59Z\",\n  \"maxMarks\": 100,\n  \"classId\": \"{{classId}}\",\n  \"subjectId\": \"{{subjectId}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assignments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assignments"
+              ]
+            },
+            "description": "Creates a Draft assignment. Teacher must be assigned to class+subject."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Update Assignment (Teacher)",
           "event": [
             {
               "listen": "test",
@@ -1741,11 +1777,76 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Calculus Practice (Updated)\",\n  \"description\": \"Complete exercises 1–12 from Chapter 4.\",\n  \"deadline\": \"2026-10-05T23:59:59Z\",\n  \"maxMarks\": 100,\n  \"classId\": \"{{classId}}\",\n  \"subjectId\": \"{{subjectId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assignments/{{assignmentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assignments",
+                "{{assignmentId}}"
+              ]
+            },
+            "description": "Uses assignmentId from Create, or set to draftAssignmentId."
+          },
+          "response": []
         },
         {
           "name": "Publish Assignment (Teacher)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
+                  "const data = pm.response.json();",
+                  "pm.test('status Published', () => pm.expect(data.status).to.eql('Published'));"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [],
             "url": {
@@ -1760,19 +1861,12 @@
                 "publish"
               ]
             },
-            "description": "POST with no body. Prefers assignmentId from Create (safer than mutating seed draft).",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{teacherToken}}",
-                  "type": "string"
-                }
-              ]
-            }
+            "description": "POST with no body. Prefers assignmentId from Create (safer than mutating seed draft)."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Unpublish Assignment (Teacher)",
           "event": [
             {
               "listen": "test",
@@ -1782,15 +1876,22 @@
                   "pm.test('Status is 200', () => pm.response.to.have.status(200));",
                   "pm.test('Response is JSON', () => pm.response.to.be.json);",
                   "const data = pm.response.json();",
-                  "pm.test('status Published', () => pm.expect(data.status).to.eql('Published'));"
+                  "pm.test('status Draft', () => pm.expect(data.status).to.eql('Draft'));"
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Unpublish Assignment (Teacher)",
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [],
             "url": {
@@ -1805,19 +1906,12 @@
                 "unpublish"
               ]
             },
-            "description": "POST with no body.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{teacherToken}}",
-                  "type": "string"
-                }
-              ]
-            }
+            "description": "POST with no body."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "List Submissions for Assignment (Teacher/Admin)",
           "event": [
             {
               "listen": "test",
@@ -1827,15 +1921,23 @@
                   "pm.test('Status is 200', () => pm.response.to.have.status(200));",
                   "pm.test('Response is JSON', () => pm.response.to.be.json);",
                   "const data = pm.response.json();",
-                  "pm.test('status Draft', () => pm.expect(data.status).to.eql('Draft'));"
+                  "pm.test('returns array', () => pm.expect(data).to.be.an('array'));",
+                  "if (data.length && data[0].id) pm.collectionVariables.set('submissionId', data[0].id);"
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "List Submissions for Assignment (Teacher/Admin)",
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -1850,7 +1952,24 @@
                 "submissions"
               ]
             },
-            "description": "Copy a submission id into submissionId for grading.",
+            "description": "Copy a submission id into submissionId for grading."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Assignment (Teacher)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1860,28 +1979,7 @@
                   "type": "string"
                 }
               ]
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
-                  "const data = pm.response.json();",
-                  "pm.test('returns array', () => pm.expect(data).to.be.an('array'));",
-                  "if (data.length && data[0].id) pm.collectionVariables.set('submissionId', data[0].id);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Delete Assignment (Teacher)",
-          "request": {
+            },
             "method": "DELETE",
             "header": [],
             "url": {
@@ -1895,30 +1993,9 @@
                 "{{assignmentId}}"
               ]
             },
-            "description": "Prefer deleting assignmentId from Create, not seeded IDs.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{teacherToken}}",
-                  "type": "string"
-                }
-              ]
-            }
+            "description": "Prefer deleting assignmentId from Create, not seeded IDs."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
-                ]
-              }
-            }
-          ]
+          "response": []
         }
       ]
     },
@@ -1927,7 +2004,33 @@
       "item": [
         {
           "name": "Get My Submissions (Student)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is JSON', () => pm.response.to.be.json);",
+                  "const data = pm.response.json();",
+                  "pm.test('returns array', () => pm.expect(data).to.be.an('array'));",
+                  "if (data.length && data[0].id) pm.collectionVariables.set('submissionId', data[0].id);",
+                  "  if (data.length && data[0].id) pm.collectionVariables.set('student1SubmissionId', data[0].id);"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -1941,19 +2044,12 @@
                 "mine"
               ]
             },
-            "description": "Student's own submissions. Save an id to submissionId if needed.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{studentToken}}",
-                  "type": "string"
-                }
-              ]
-            }
+            "description": "Student's own submissions. Save an id to submissionId if needed."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Get Submission by ID",
           "event": [
             {
               "listen": "test",
@@ -1963,55 +2059,44 @@
                   "pm.test('Status is 200', () => pm.response.to.have.status(200));",
                   "pm.test('Response is JSON', () => pm.response.to.be.json);",
                   "const data = pm.response.json();",
-                  "pm.test('returns array', () => pm.expect(data).to.be.an('array'));",
-                  "if (data.length && data[0].id) pm.collectionVariables.set('submissionId', data[0].id);"
+                  "pm.test('submission shape', () => {",
+                  "  pm.expect(data).to.include.keys('id', 'assignmentId', 'answer', 'status', 'submittedAt');",
+                  "  pm.expect(data.id).to.eql(pm.collectionVariables.get('student1SubmissionId'));",
+                  "});"
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Create Submission (Student 2)",
+          ],
           "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/submissions",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "submissions"
-              ]
-            },
-            "description": "Uses student2 (student1 already has a seed submission on publishedAssignmentId).",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{student2Token}}",
+                  "value": "{{studentToken}}",
                   "type": "string"
                 }
               ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"assignmentId\": \"{{publishedAssignmentId}}\",\n  \"answer\": \"Here is my solution for the linear equations quiz.\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/submissions/{{student1SubmissionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "submissions",
+                "{{student1SubmissionId}}"
+              ]
+            },
+            "description": "Student reads own submission. Run Get My Submissions first to set student1SubmissionId."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Create Submission (Student 2)",
           "event": [
             {
               "listen": "test",
@@ -2029,30 +2114,8 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Update Submission (Student 2)",
+          ],
           "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/submissions/{{submissionId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "submissions",
-                "{{submissionId}}"
-              ]
-            },
-            "description": "Set submissionId from Create. Only allowed before deadline / while editable.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2063,17 +2126,38 @@
                 }
               ]
             },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"answer\": \"Updated answer with corrected working for problem 3.\"\n}",
+              "raw": "{\n  \"assignmentId\": \"{{publishedAssignmentId}}\",\n  \"answer\": \"Here is my solution for the linear equations quiz.\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/submissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "submissions"
+              ]
+            },
+            "description": "Uses student2 (student1 already has a seed submission on publishedAssignmentId)."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Update Submission (Student 2)",
           "event": [
             {
               "listen": "test",
@@ -2087,11 +2171,18 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Grade Submission (Teacher)",
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{student2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "PUT",
             "header": [
               {
@@ -2099,40 +2190,32 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answer\": \"Updated answer with corrected working for problem 3.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": "{{baseUrl}}/api/submissions/{{submissionId}}/grade",
+              "raw": "{{baseUrl}}/api/submissions/{{submissionId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "submissions",
-                "{{submissionId}}",
-                "grade"
+                "{{submissionId}}"
               ]
             },
-            "description": "PUT grade. Status optional: Submitted | Late | Graded | Returned.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{teacherToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"marks\": 92,\n  \"feedback\": \"Excellent work. Minor error on problem 7.\",\n  \"status\": \"Graded\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Set submissionId from Create. Only allowed before deadline / while editable."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Grade Submission (Teacher)",
           "event": [
             {
               "listen": "test",
@@ -2150,7 +2233,49 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"marks\": 92,\n  \"feedback\": \"Excellent work. Minor error on problem 7.\",\n  \"status\": \"Graded\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/submissions/{{submissionId}}/grade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "submissions",
+                "{{submissionId}}",
+                "grade"
+              ]
+            },
+            "description": "PUT grade. Status optional: Submitted | Late | Graded | Returned."
+          },
+          "response": []
         }
       ]
     },
@@ -2159,32 +2284,6 @@
       "item": [
         {
           "name": "GET Dashboard Stats",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/dashboard",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "dashboard"
-              ]
-            },
-            "description": "Role-aware dashboard counters.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{bearerToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": [],
           "event": [
             {
               "listen": "test",
@@ -2202,7 +2301,33 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dashboard"
+              ]
+            },
+            "description": "Role-aware dashboard counters."
+          },
+          "response": []
         }
       ]
     },
@@ -2211,32 +2336,6 @@
       "item": [
         {
           "name": "List My Notifications",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/notifications",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "notifications"
-              ]
-            },
-            "description": "Seeded unread notification exists for student1.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{studentToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": [],
           "event": [
             {
               "listen": "test",
@@ -2258,24 +2357,8 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "GET Unread Count",
+          ],
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/notifications/unread-count",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "notifications",
-                "unread-count"
-              ]
-            },
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2285,9 +2368,25 @@
                   "type": "string"
                 }
               ]
-            }
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            },
+            "description": "Seeded unread notification exists for student1."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "GET Unread Count",
           "event": [
             {
               "listen": "test",
@@ -2301,11 +2400,58 @@
                 ]
               }
             }
-          ]
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/unread-count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "unread-count"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Mark Notification Read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "PUT",
             "header": [],
             "url": {
@@ -2320,30 +2466,9 @@
                 "read"
               ]
             },
-            "description": "Run List My Notifications first to populate notificationId.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{studentToken}}",
-                  "type": "string"
-                }
-              ]
-            }
+            "description": "Run List My Notifications first to populate notificationId."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
-                ]
-              }
-            }
-          ]
+          "response": []
         }
       ]
     },
@@ -2352,31 +2477,6 @@
       "item": [
         {
           "name": "List Settings",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/settings",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "settings"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": [],
           "event": [
             {
               "listen": "test",
@@ -2393,30 +2493,8 @@
                 ]
               }
             }
-          ]
-        },
-        {
-          "name": "Update Setting",
+          ],
           "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/settings/AllowLateSubmissions",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "settings",
-                "AllowLateSubmissions"
-              ]
-            },
-            "description": "Update seeded AllowLateSubmissions key.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -2427,17 +2505,23 @@
                 }
               ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"value\": \"true\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
             }
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Update Setting",
           "event": [
             {
               "listen": "test",
@@ -2453,6 +2537,2932 @@
                   "});"
                 ]
               }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": \"true\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/settings/AllowLateSubmissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings",
+                "AllowLateSubmissions"
+              ]
+            },
+            "description": "Update seeded AllowLateSubmissions key."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Access Control",
+      "description": "RBAC and authentication tests. Run Auth logins first so teacherToken/studentToken/adminToken are set.\n\nExpect 401 without a token, 403 when the role is not allowed, and 404 when a student is denied a resource they must not enumerate.",
+      "item": [
+        {
+          "name": "Unauthenticated (401)",
+          "item": [
+            {
+              "name": "List Users - no token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "List Classes - no token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/classes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "classes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "List Subjects - no token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/subjects",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "subjects"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "List Teacher Assignments - no token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/teacher-assignments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "teacher-assignments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "List Enrollments - no token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/enrollments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "enrollments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "List Assignments - no token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Assignment - no token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"x\",\n  \"description\": \"x\",\n  \"deadline\": \"2026-09-30T23:59:59Z\",\n  \"maxMarks\": 10,\n  \"classId\": \"{{classId}}\",\n  \"subjectId\": \"{{subjectId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "List Submissions Mine - no token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/mine",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions",
+                    "mine"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GET Dashboard - no token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/dashboard",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "dashboard"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "List Notifications - no token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "List Settings - no token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/settings",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "settings"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Teacher forbidden on Admin routes (403)",
+          "item": [
+            {
+              "name": "Teacher List Users",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher Get User",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/users/{{teacherId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users",
+                    "{{teacherId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher Create User",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"blocked@school.com\",\n  \"password\": \"User123!\",\n  \"fullName\": \"Blocked\",\n  \"role\": \"Student\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher List Classes",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/classes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "classes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher Create Class",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Blocked\",\n  \"code\": \"BLK\",\n  \"academicYear\": \"2025-2026\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/classes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "classes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher List Subjects",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/subjects",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "subjects"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher Create Subject",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Blocked\",\n  \"code\": \"BLK\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/subjects",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "subjects"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher List Teacher Assignments (admin list)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/teacher-assignments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "teacher-assignments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher Create Teacher Assignment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"teacherId\": \"{{teacherId}}\",\n  \"classId\": \"{{classId}}\",\n  \"subjectId\": \"{{subjectEngId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/teacher-assignments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "teacher-assignments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher List Enrollments",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/enrollments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "enrollments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher Create Enrollment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"classId\": \"{{classId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/enrollments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "enrollments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher List Settings",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/settings",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "settings"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher Update Setting",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"value\": \"false\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/settings/AllowLateSubmissions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "settings",
+                    "AllowLateSubmissions"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Student forbidden on Admin routes (403)",
+          "item": [
+            {
+              "name": "Student List Users",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student Create User",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"blocked2@school.com\",\n  \"password\": \"User123!\",\n  \"fullName\": \"Blocked\",\n  \"role\": \"Teacher\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student List Classes",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/classes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "classes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student Create Class",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Blocked\",\n  \"code\": \"BLK2\",\n  \"academicYear\": \"2025-2026\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/classes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "classes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student List Subjects",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/subjects",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "subjects"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student Create Subject",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Blocked\",\n  \"code\": \"BLK2\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/subjects",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "subjects"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student List Teacher Assignments",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/teacher-assignments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "teacher-assignments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student List Enrollments",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/enrollments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "enrollments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student List Settings",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/settings",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "settings"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student Update Setting",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"value\": \"false\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/settings/AllowLateSubmissions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "settings",
+                    "AllowLateSubmissions"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Non-teachers forbidden on Teacher actions (403)",
+          "item": [
+            {
+              "name": "Student Create Assignment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Blocked HW\",\n  \"description\": \"nope\",\n  \"deadline\": \"2026-09-30T23:59:59Z\",\n  \"maxMarks\": 50,\n  \"classId\": \"{{classId}}\",\n  \"subjectId\": \"{{subjectId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student Update Assignment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Stolen\",\n  \"description\": \"x\",\n  \"deadline\": \"2026-09-30T23:59:59Z\",\n  \"maxMarks\": 50,\n  \"classId\": \"{{classId}}\",\n  \"subjectId\": \"{{subjectId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments/{{draftAssignmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments",
+                    "{{draftAssignmentId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student Publish Assignment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments/{{draftAssignmentId}}/publish",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments",
+                    "{{draftAssignmentId}}",
+                    "publish"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student Unpublish Assignment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments/{{publishedAssignmentId}}/unpublish",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments",
+                    "{{publishedAssignmentId}}",
+                    "unpublish"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student Delete Assignment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments/{{draftAssignmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments",
+                    "{{draftAssignmentId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student Grade Submission",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"marks\": 10,\n  \"feedback\": \"nope\",\n  \"status\": \"Graded\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/{{submissionId}}/grade",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions",
+                    "{{submissionId}}",
+                    "grade"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student List My Teaching Assignments",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/teacher-assignments/mine",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "teacher-assignments",
+                    "mine"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Admin Create Assignment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Blocked HW\",\n  \"description\": \"nope\",\n  \"deadline\": \"2026-09-30T23:59:59Z\",\n  \"maxMarks\": 50,\n  \"classId\": \"{{classId}}\",\n  \"subjectId\": \"{{subjectId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Admin Update Assignment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Stolen\",\n  \"description\": \"x\",\n  \"deadline\": \"2026-09-30T23:59:59Z\",\n  \"maxMarks\": 50,\n  \"classId\": \"{{classId}}\",\n  \"subjectId\": \"{{subjectId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments/{{draftAssignmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments",
+                    "{{draftAssignmentId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Admin Publish Assignment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments/{{draftAssignmentId}}/publish",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments",
+                    "{{draftAssignmentId}}",
+                    "publish"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Admin Unpublish Assignment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments/{{publishedAssignmentId}}/unpublish",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments",
+                    "{{publishedAssignmentId}}",
+                    "unpublish"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Admin Delete Assignment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments/{{draftAssignmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments",
+                    "{{draftAssignmentId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Admin Grade Submission",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"marks\": 10,\n  \"feedback\": \"nope\",\n  \"status\": \"Graded\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/{{submissionId}}/grade",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions",
+                    "{{submissionId}}",
+                    "grade"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Admin List My Teaching Assignments",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/teacher-assignments/mine",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "teacher-assignments",
+                    "mine"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student List Assignment Submissions",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments/{{publishedAssignmentId}}/submissions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments",
+                    "{{publishedAssignmentId}}",
+                    "submissions"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Non-students forbidden on Student actions (403)",
+          "item": [
+            {
+              "name": "Teacher Get My Submissions",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/mine",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions",
+                    "mine"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher Create Submission",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"assignmentId\": \"{{publishedAssignmentId}}\",\n  \"answer\": \"blocked\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher Update Submission",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"answer\": \"blocked update\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/{{submissionId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions",
+                    "{{submissionId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Admin Get My Submissions",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/mine",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions",
+                    "mine"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Admin Create Submission",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"assignmentId\": \"{{publishedAssignmentId}}\",\n  \"answer\": \"blocked\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Admin Update Submission",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"answer\": \"blocked update\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/{{submissionId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions",
+                    "{{submissionId}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Resource isolation (404)",
+          "item": [
+            {
+              "name": "Student Get Draft Assignment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments/{{draftAssignmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments",
+                    "{{draftAssignmentId}}"
+                  ]
+                },
+                "description": "Drafts are hidden from students as not found."
+              },
+              "response": []
+            },
+            {
+              "name": "Student 2 Get Student 1 Submission",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{student2Token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/{{student1SubmissionId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions",
+                    "{{student1SubmissionId}}"
+                  ]
+                },
+                "description": "Uses student1SubmissionId from Get My Submissions. Other students get 404."
+              },
+              "response": []
+            },
+            {
+              "name": "Student Mark Someone Else Notification Read",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{student2Token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications",
+                    "{{notificationId}}",
+                    "read"
+                  ]
+                },
+                "description": "Run List My Notifications as student1 first. Other users cannot mark that notification read."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Allowed authenticated reads",
+          "item": [
+            {
+              "name": "Admin GET Dashboard",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                      "const data = pm.response.json();",
+                      "pm.test('stats shape', () => pm.expect(data).to.include.keys('users', 'classes', 'assignments', 'submissions'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/dashboard",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "dashboard"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher GET Dashboard",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/dashboard",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "dashboard"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student GET Dashboard",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/dashboard",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "dashboard"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Admin List Assignment Submissions",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments/{{publishedAssignmentId}}/submissions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments",
+                    "{{publishedAssignmentId}}",
+                    "submissions"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher List Assignment Submissions",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments/{{publishedAssignmentId}}/submissions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments",
+                    "{{publishedAssignmentId}}",
+                    "submissions"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student List Published Assignments",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                      "const data = pm.response.json();",
+                      "pm.test('returns array', () => pm.expect(data).to.be.an('array'));",
+                      "pm.test('no drafts', () => {",
+                      "  pm.expect(data.every(a => a.status !== 'Draft')).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Student Get Published Assignment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{studentToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/assignments/{{publishedAssignmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "assignments",
+                    "{{publishedAssignmentId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Teacher List Notifications",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{teacherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Admin List Notifications",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/notifications",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notifications"
+                  ]
+                }
+              },
+              "response": []
             }
           ]
         }
@@ -2550,6 +5560,10 @@
     },
     {
       "key": "notificationId",
+      "value": ""
+    },
+    {
+      "key": "student1SubmissionId",
       "value": ""
     }
   ]
