@@ -10,6 +10,7 @@ namespace backend.Services;
 
 public interface ISubmissionService
 {
+    Task<SubmissionDto> GetAsync(Guid id, CancellationToken ct);
     Task<SubmissionDto> CreateAsync(CreateSubmissionRequest request, CancellationToken ct);
     Task<SubmissionDto> UpdateAsync(Guid id, UpdateSubmissionRequest request, CancellationToken ct);
     Task<List<SubmissionDto>> MineAsync(CancellationToken ct);
@@ -23,19 +24,52 @@ public class SubmissionService : ISubmissionService
 
     private readonly AppDbContext _db;
     private readonly ICurrentUser _currentUser;
+    private readonly IAssignmentService _assignmentService;
     private readonly ISettingsService _settingsService;
     private readonly INotificationService _notificationService;
 
     public SubmissionService(
         AppDbContext db,
         ICurrentUser currentUser,
+        IAssignmentService assignmentService,
         ISettingsService settingsService,
         INotificationService notificationService)
     {
         _db = db;
         _currentUser = currentUser;
+        _assignmentService = assignmentService;
         _settingsService = settingsService;
         _notificationService = notificationService;
+    }
+
+    public async Task<SubmissionDto> GetAsync(Guid id, CancellationToken ct)
+    {
+        var submission = await _db.Submissions
+            .Include(s => s.Student)
+            .FirstOrDefaultAsync(s => s.Id == id, ct)
+            ?? throw new NotFoundException("Submission not found.");
+
+        if (_currentUser.Role == UserRole.Student && submission.StudentId != _currentUser.UserId)
+            throw new NotFoundException("Submission not found.");
+
+        if (_currentUser.Role == UserRole.Teacher)
+        {
+            var assignmentRow = await _db.Assignments.FirstOrDefaultAsync(a => a.Id == submission.AssignmentId, ct)
+                ?? throw new NotFoundException("Assignment not found.");
+            var isOwner = assignmentRow.CreatedByTeacherId == _currentUser.UserId;
+            var isAssigned = !isOwner && await _db.TeacherAssignments.AnyAsync(
+                t => t.TeacherId == _currentUser.UserId
+                     && t.ClassId == assignmentRow.ClassId
+                     && t.SubjectId == assignmentRow.SubjectId, ct);
+            if (!isOwner && !isAssigned)
+                throw new ForbiddenException("You can only view submissions for your own assignments.");
+        }
+        else if (_currentUser.Role != UserRole.Student && _currentUser.Role != UserRole.Admin)
+        {
+            throw new ForbiddenException();
+        }
+
+        return await MapAsync(submission, submission.Student, ct);
     }
 
     public async Task<SubmissionDto> CreateAsync(CreateSubmissionRequest request, CancellationToken ct)
@@ -76,7 +110,7 @@ public class SubmissionService : ISubmissionService
         await _db.SaveChangesAsync(ct);
 
         var student = await _db.Users.FirstAsync(u => u.Id == studentId, ct);
-        return ToDto(submission, assignment, student);
+        return await MapAsync(submission, student, ct);
     }
 
     public async Task<SubmissionDto> UpdateAsync(Guid id, UpdateSubmissionRequest request, CancellationToken ct)
@@ -104,7 +138,7 @@ public class SubmissionService : ISubmissionService
         await _db.SaveChangesAsync(ct);
 
         var student = await _db.Users.FirstAsync(u => u.Id == studentId, ct);
-        return ToDto(submission, submission.Assignment, student);
+        return await MapAsync(submission, student, ct);
     }
 
     public async Task<List<SubmissionDto>> MineAsync(CancellationToken ct)
@@ -112,13 +146,19 @@ public class SubmissionService : ISubmissionService
         var studentId = _currentUser.UserId;
 
         var submissions = await _db.Submissions
-            .Include(s => s.Assignment)
             .Include(s => s.Student)
             .Where(s => s.StudentId == studentId)
             .OrderByDescending(s => s.SubmittedAt)
             .ToListAsync(ct);
 
-        return submissions.Select(s => ToDto(s, s.Assignment, s.Student)).ToList();
+        var assignmentIds = submissions.Select(s => s.AssignmentId).Distinct().ToList();
+        var assignments = (await _assignmentService.GetManyAsync(assignmentIds, ct))
+            .ToDictionary(a => a.Id);
+
+        return submissions
+            .Where(s => assignments.ContainsKey(s.AssignmentId))
+            .Select(s => ToDto(s, assignments[s.AssignmentId], s.Student))
+            .ToList();
     }
 
     public async Task<List<SubmissionDto>> ListByAssignmentAsync(Guid assignmentId, CancellationToken ct)
@@ -140,14 +180,15 @@ public class SubmissionService : ISubmissionService
             throw new ForbiddenException("You are not allowed to view these submissions.");
         }
 
+        var assignmentDto = await _assignmentService.GetAsync(assignmentId, ct);
+
         var submissions = await _db.Submissions
-            .Include(s => s.Assignment)
             .Include(s => s.Student)
             .Where(s => s.AssignmentId == assignmentId)
             .OrderBy(s => s.SubmittedAt)
             .ToListAsync(ct);
 
-        return submissions.Select(s => ToDto(s, s.Assignment, s.Student)).ToList();
+        return submissions.Select(s => ToDto(s, assignmentDto, s.Student)).ToList();
     }
 
     public async Task<SubmissionDto> GradeAsync(Guid id, GradeSubmissionRequest request, CancellationToken ct)
@@ -182,7 +223,7 @@ public class SubmissionService : ISubmissionService
             $"You scored {request.Marks}/{submission.Assignment.MaxMarks}.",
             ct);
 
-        return ToDto(submission, submission.Assignment, submission.Student);
+        return await MapAsync(submission, submission.Student, ct);
     }
 
     private async Task<SubmissionStatus> DetermineStatusOnCreateAsync(
@@ -198,7 +239,17 @@ public class SubmissionService : ISubmissionService
         return SubmissionStatus.Late;
     }
 
-    private static SubmissionDto ToDto(Submission s, Assignment a, User student) => new(
-        s.Id, s.AssignmentId, a.Title, s.StudentId, student.FullName,
-        s.Answer, s.SubmittedAt, s.Status, s.Marks, s.Feedback, a.MaxMarks, a.Deadline);
+    private async Task<SubmissionDto> MapAsync(Submission submission, User student, CancellationToken ct)
+    {
+        var assignment = (await _assignmentService.GetManyAsync([submission.AssignmentId], ct))
+            .FirstOrDefault()
+            ?? throw new NotFoundException("Assignment not found.");
+        return ToDto(submission, assignment, student);
+    }
+
+    private static SubmissionDto ToDto(Submission s, AssignmentDto assignment, User student) => new(
+        s.Id, s.AssignmentId, assignment.Title, assignment.Description, assignment.Status,
+        assignment.ClassName, assignment.SubjectName, assignment.TeacherName,
+        s.StudentId, student.FullName,
+        s.Answer, s.SubmittedAt, s.Status, s.Marks, s.Feedback, assignment.MaxMarks, assignment.Deadline);
 }

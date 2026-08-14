@@ -36,7 +36,9 @@ public record CreateAssignmentRequest(string Title, string Description, DateTime
 public record UpdateAssignmentRequest(string Title, string Description, DateTimeOffset Deadline, int MaxMarks, Guid ClassId, Guid SubjectId);
 
 public record SubmissionDto(
-    Guid Id, Guid AssignmentId, string AssignmentTitle, Guid StudentId, string StudentName,
+    Guid Id, Guid AssignmentId, string AssignmentTitle, string AssignmentDescription,
+    AssignmentStatus AssignmentStatus, string ClassName, string SubjectName, string TeacherName,
+    Guid StudentId, string StudentName,
     string Answer, DateTimeOffset SubmittedAt, SubmissionStatus Status, int? Marks, string? Feedback,
     int MaxMarks, DateTimeOffset Deadline);
 

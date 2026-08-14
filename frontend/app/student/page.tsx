@@ -142,7 +142,14 @@ export default function StudentDashboardPage() {
                                           <tbody>
                                                 {recentSubmissions.map((s) => (
                                                       <tr key={s.id}>
-                                                            <td className="font-medium text-(--color-primary-dark)">{s.assignmentTitle}</td>
+                                                            <td>
+                                                                  <Link
+                                                                        href={`/student/submissions/${s.id}`}
+                                                                        className="font-[550] text-(--color-primary-dark) underline-offset-2 hover:text-(--color-primary-soft) hover:underline"
+                                                                  >
+                                                                        {s.assignmentTitle}
+                                                                  </Link>
+                                                            </td>
                                                             <td>
                                                                   <SubmissionStatusBadge status={s.status} />
                                                             </td>

@@ -173,6 +173,11 @@ export interface SubmissionDto {
       id: string;
       assignmentId: string;
       assignmentTitle: string;
+      assignmentDescription: string;
+      assignmentStatus: AssignmentStatus;
+      className: string;
+      subjectName: string;
+      teacherName: string;
       studentId: string;
       studentName: string;
       answer: string;

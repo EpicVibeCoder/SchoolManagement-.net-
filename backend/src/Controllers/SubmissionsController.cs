@@ -22,6 +22,13 @@ public class SubmissionsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<SubmissionDto>> Get(Guid id, CancellationToken ct)
+    {
+        var result = await _submissionService.GetAsync(id, ct);
+        return Ok(result);
+    }
+
     [HttpPost]
     [Authorize(Roles = "Student")]
     public async Task<ActionResult<SubmissionDto>> Create(CreateSubmissionRequest request, CancellationToken ct)

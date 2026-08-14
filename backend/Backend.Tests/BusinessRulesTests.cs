@@ -193,6 +193,50 @@ public class BusinessRulesTests : IDisposable
         Assert.Equal(SubmissionStatus.Late, s.Status);
     }
 
+    [Fact]
+    public async Task Student_Mine_Includes_Assignment_And_Student()
+    {
+        As(UserRole.Teacher, _teacherId);
+        var assignments = _sp.GetRequiredService<IAssignmentService>();
+        var a = await assignments.CreateAsync(new CreateAssignmentRequest(
+            "Mine HW", "show working", DateTimeOffset.UtcNow.AddDays(3), 100, _classId, _subjectId), CancellationToken.None);
+        await assignments.PublishAsync(a.Id, CancellationToken.None);
+
+        As(UserRole.Student, _studentId);
+        var submissions = _sp.GetRequiredService<ISubmissionService>();
+        var created = await submissions.CreateAsync(new CreateSubmissionRequest(a.Id, "x = 5"), CancellationToken.None);
+
+        var mine = await submissions.MineAsync(CancellationToken.None);
+        var row = Assert.Single(mine);
+        Assert.Equal(created.Id, row.Id);
+        Assert.Equal("Mine HW", row.AssignmentTitle);
+        Assert.Equal("show working", row.AssignmentDescription);
+        Assert.Equal("C", row.ClassName);
+        Assert.Equal("Math", row.SubjectName);
+        Assert.Equal("T", row.TeacherName);
+        Assert.Equal("S", row.StudentName);
+        Assert.Equal("x = 5", row.Answer);
+    }
+
+    [Fact]
+    public async Task Student_Can_Get_Own_Submission()
+    {
+        As(UserRole.Teacher, _teacherId);
+        var assignments = _sp.GetRequiredService<IAssignmentService>();
+        var a = await assignments.CreateAsync(new CreateAssignmentRequest(
+            "GetMine", "desc", DateTimeOffset.UtcNow.AddDays(3), 100, _classId, _subjectId), CancellationToken.None);
+        await assignments.PublishAsync(a.Id, CancellationToken.None);
+
+        As(UserRole.Student, _studentId);
+        var submissions = _sp.GetRequiredService<ISubmissionService>();
+        var created = await submissions.CreateAsync(new CreateSubmissionRequest(a.Id, "ans"), CancellationToken.None);
+
+        var detail = await submissions.GetAsync(created.Id, CancellationToken.None);
+        Assert.Equal(created.Id, detail.Id);
+        Assert.Equal("GetMine", detail.AssignmentTitle);
+        Assert.Equal("S", detail.StudentName);
+    }
+
     public void Dispose()
     {
         _db.Dispose();

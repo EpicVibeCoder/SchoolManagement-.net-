@@ -12,6 +12,7 @@ public interface IAssignmentService
 {
     Task<List<AssignmentDto>> ListAsync(Guid? classId, Guid? subjectId, CancellationToken ct);
     Task<AssignmentDto> GetAsync(Guid id, CancellationToken ct);
+    Task<List<AssignmentDto>> GetManyAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct);
     Task<AssignmentDto> CreateAsync(CreateAssignmentRequest request, CancellationToken ct);
     Task<AssignmentDto> UpdateAsync(Guid id, UpdateAssignmentRequest request, CancellationToken ct);
     Task DeleteAsync(Guid id, CancellationToken ct);
@@ -81,6 +82,18 @@ public class AssignmentService : IAssignmentService
         await EnsureViewableAsync(assignment, ct);
 
         return ToDto(assignment);
+    }
+
+    public async Task<List<AssignmentDto>> GetManyAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct)
+    {
+        if (ids.Count == 0)
+            return [];
+
+        var assignments = await BaseQuery()
+            .Where(a => ids.Contains(a.Id))
+            .ToListAsync(ct);
+
+        return assignments.Select(ToDto).ToList();
     }
 
     public async Task<AssignmentDto> CreateAsync(CreateAssignmentRequest request, CancellationToken ct)
