@@ -7,7 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import { ErrorBlock, LoadingBlock } from "@/components/StateMessage";
 import { ApiError, AssignmentDto, DashboardStatsDto, SubmissionDto, get } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { formatDateTime } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -110,7 +110,7 @@ export default function StudentDashboardPage() {
                                                                         {a.title}
                                                                   </Link>
                                                             </td>
-                                                            <td>{formatDateTime(a.deadline)}</td>
+                                                            <td>{formatDate(a.deadline)}</td>
                                                             <td>
                                                                   <AssignmentStatusBadge status={a.status} />
                                                             </td>
