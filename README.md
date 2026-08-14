@@ -16,7 +16,7 @@
 
 ---
 
-[Live Demo](#-live-demo) • [Architecture & Design](#-architecture--design) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [Testing & Quality](#-testing--quality) • [Database & Migrations](#-database--migrations) • [Demo Credentials](#-demo-credentials) • [API & Health](#-api--health-monitoring) • [Deployment](#-deployment-guide)
+[Live Demo](#-live-demo) • [Architecture & Design](#-architecture--design) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [Testing & Quality](#-testing--quality) • [Database & Migrations](#-database--migrations) • [Demo Credentials](#-demo-credentials) • [API & Health](#-api--health-monitoring) • [Postman](#-postman-api-testing) • [Deployment](#-deployment-guide)
 
 ---
 
@@ -275,6 +275,10 @@ cd frontend
 npx prettier --write .
 ```
 
+### Postman (API smoke & RBAC)
+
+Import [`docs/School Management API.postman_collection.json`](docs/School%20Management%20API.postman_collection.json) and follow [Postman API testing](#-postman-api-testing).
+
 ---
 
 ## 💾 Database & Migrations
@@ -350,7 +354,34 @@ HEAD /api/health
 Interactive OpenAPI documentation is dynamically served:
 
 - **Swagger UI (Development):** `http://localhost:5000/swagger`
-- **Postman Collection:** [`docs/School Management API.postman_collection.json`](<file:///home/ash/githubRepos/SchoolManagement(.net)/docs/School%20Management%20API.postman_collection.json>)
+
+For request-level tests (status codes, response shape, JWT/RBAC), use the [Postman collection](#-postman-api-testing).
+
+---
+
+## 📬 Postman API Testing
+
+The collection [`docs/School Management API.postman_collection.json`](docs/School%20Management%20API.postman_collection.json) covers Health, Auth, Users, Classes, Subjects, Teacher Assignments, Enrollments, Assignments, Submissions, Dashboard, Notifications, Settings, and Access Control (`401` / `403` / `404` RBAC). Each request includes Postman tests for status and response shape (or side effects).
+
+### Import
+
+1. Open [Postman](https://www.postman.com/downloads/).
+2. **Import** → **File** → select `docs/School Management API.postman_collection.json`.
+3. Confirm collection variable `baseUrl` is `http://localhost:5000` (or point it at a deployed API).
+
+No separate Postman Environment file is required; tokens and seeded IDs live on the collection.
+
+### Run order
+
+Start the API first ([Quick Start](#-quick-start)). Seeded demo users must exist (`DbSeeder` on empty `Users`).
+
+1. **Auth** — run **Login - Admin**, **Login - Teacher**, **Login - Student**, and **Login - Student 2**. Successful logins write `adminToken`, `teacherToken`, `studentToken`, `student2Token`, and `bearerToken` as collection variables.
+2. **Health** and role folders (Users, Classes, Subjects, Teacher Assignments, Enrollments, Assignments, Submissions, Dashboard, Notifications, Settings) — use the saved JWTs. Seeded IDs (`adminId`, `teacherId`, `studentId`, `classId`, `subjectId`, `draftAssignmentId`, `publishedAssignmentId`, …) match `DbSeeder`.
+3. **Access Control** — run after logins so 401/403 cases use the correct role tokens.
+
+Use **Collection Runner** (or Newman) to execute the full collection; run **Auth** before folders that send `Authorization: Bearer {{…Token}}`.
+
+Demo passwords are listed under [Demo Credentials](#-demo-credentials).
 
 ---
 
