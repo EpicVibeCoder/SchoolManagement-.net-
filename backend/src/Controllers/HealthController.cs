@@ -1,7 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+
 namespace backend.Controllers;
+
 [ApiController]
 [Route("api/[controller]")]
+[DisableRateLimiting]
 public class HealthController : ControllerBase
 {
     [HttpGet,HttpHead]

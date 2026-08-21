@@ -1,12 +1,16 @@
+using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 using backend.Auth;
 using backend.Data;
 using backend.Middleware;
 using backend.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -131,6 +135,59 @@ try
                 .AllowAnyMethod());
     });
 
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+
+    var apiPermit = builder.Configuration.GetValue("RateLimiting:PermitLimit", 100);
+    var apiWindowSeconds = builder.Configuration.GetValue("RateLimiting:WindowSeconds", 60);
+    var authPermit = builder.Configuration.GetValue("RateLimiting:AuthPermitLimit", 10);
+    var authWindowSeconds = builder.Configuration.GetValue("RateLimiting:AuthWindowSeconds", 60);
+
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.OnRejected = async (context, cancellationToken) =>
+        {
+            var retryAfter = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var delay)
+                ? Math.Max(1, (int)Math.Ceiling(delay.TotalSeconds))
+                : apiWindowSeconds;
+            context.HttpContext.Response.Headers.RetryAfter = retryAfter.ToString();
+            context.HttpContext.Response.ContentType = "application/json";
+            await context.HttpContext.Response.WriteAsJsonAsync(new
+            {
+                message = "Too many requests. Please try again later.",
+                code = "rate_limit_exceeded"
+            }, cancellationToken);
+        };
+
+        options.AddPolicy("auth", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter($"auth:{RateLimitKey(httpContext)}", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = authPermit,
+                Window = TimeSpan.FromSeconds(authWindowSeconds),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        {
+            if (httpContext.Request.Path.StartsWithSegments("/api/health"))
+                return RateLimitPartition.GetNoLimiter("health");
+
+            return RateLimitPartition.GetFixedWindowLimiter($"api:{RateLimitKey(httpContext)}", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = apiPermit,
+                Window = TimeSpan.FromSeconds(apiWindowSeconds),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            });
+        });
+    });
+
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
     builder.Services.AddOpenApi();
@@ -144,6 +201,7 @@ try
         await DbSeeder.SeedAsync(db);
     }
 
+    app.UseForwardedHeaders();
     app.UseMiddleware<ExceptionMiddleware>();
     app.UseSerilogRequestLogging();
 
@@ -160,6 +218,7 @@ try
 
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseRateLimiter();
     app.MapControllers();
 
     app.Run();
@@ -175,7 +234,20 @@ finally
     Log.CloseAndFlush();
 }
 
-public partial class Program { }
+public partial class Program
+{
+    internal static string RateLimitKey(HttpContext httpContext)
+    {
+        if (httpContext.User.Identity?.IsAuthenticated == true)
+        {
+            var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!string.IsNullOrEmpty(userId))
+                return $"user:{userId}";
+        }
+
+        return $"ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
+    }
+}
 
 public sealed class FluentValidationActionFilter : IAsyncActionFilter
 {
